@@ -488,3 +488,64 @@ data_dif$Land <- data_now$Land
 data_dif$Jahr <- data_now$Jahr
 ```
 
+
+## Matrix der Treatments
+
+```{r}
+library(readxl)
+
+treat.raw <- read_xlsx("Data/Treatment_WK_21.xlsx",sheet=2)
+all.years <- c(2021,2017,2013,2009,2005)
+all.parties <- c("CDU/CSU","SPD","AfD","FDP","Die Linke","Bündnis 90/Die Grünen")
+all.parties2 <- c("CDU/CSU","SPD","AfD","FDP","DIE LINKE","GRUENE")
+all.states <- c("SH","HH","NI","HB","NRW","HE","RP","BW","BY","SL","B","BB","MV","SN","SA","TH")
+
+
+data_treat <- data_now # create a treatment matrix
+data_treat[,grep("Erststimmen",names(data_treat))] <- 0
+data_treat[,grep("Zweitstimmen",names(data_treat))] <- 0
+
+for (i in 1:nrow(treat.raw)){# Schleife über alle Zeilen
+
+  # Nur die Zeilen für die BTW, die wir berücksichtigen wollen
+  if (as.numeric(treat.raw$Jahr[i]) %in% all.years){
+   
+    # identify which federal election
+    which.year <- as.numeric(treat.raw$Jahr[i])
+    
+    # identify which party's leader
+    which.party <- which(all.parties==treat.raw$Partei2[i]) 
+    
+    # identify which treatment in which district
+    which.wkr <- as.numeric(treat.raw$WK[i])
+    treat.wkr <- as.numeric(treat.raw$T_DM[i])
+
+    # identify which treatment in which state
+    which.land <- which(all.states == treat.raw$Land[i])
+    treat.land <- as.numeric(treat.raw$T_LP[i])
+
+    ## From here replacing values in the treatment matrix
+    
+    # District (only in the case when the leader run for a district)
+    if (!is.na(which.wkr)){
+      data_treat[data_treat$Jahr==which.year & data_treat$Nr==which.wkr,
+                 grep(all.parties2[which.party],names(data_treat))[1] ] <- treat.wkr
+    }
+    
+    # Party list 
+    if (length(which.land)>0){ # only in case when the state was identified
+      data_treat[data_treat$Jahr==which.year & data_treat$Land==which.land,
+                 grep(all.parties2[which.party],names(data_treat))[2]] <- treat.land
+    }
+
+  }
+    
+}
+
+
+save(data_treat, file = "Data/data_treat.RData")
+
+
+
+```
+
