@@ -185,7 +185,7 @@ colnames(result1713)[12:23] <- c("CDU/CSU Erststimmen","CDU/CSU Zweitstimmen","S
 ```{r Daten}
 ### BTW13 ###
 
-# read in results
+# read in results # AFD eiinfügen
 btw13_raw <- read.csv("Data/btw_kerg/btw2013_kerg.csv",
                       skip=8, sep=";", header = FALSE, encoding="latin1")
 
@@ -481,7 +481,7 @@ save(data_now, file = "Data/data_now.RData")
 save(data_then, file = "Data/data_then.RData")
 
 ## not yet data_dif
-data_dif <- data_now[4:23] - data_then[4:23]
+data_dif <- data_now[,4:23] - data_then[,4:23]
 data_dif$Nr <- data_now$Nr
 data_dif$Gebiet <- data_now$Gebiet
 data_dif$Land <- data_now$Land
@@ -489,24 +489,20 @@ data_dif$Jahr <- data_now$Jahr
 ```
 
 
+
 ## Matrix der Treatments
 
 ```{r}
 library(readxl)
-
 treat.raw <- read_xlsx("Data/Treatment_WK_21.xlsx",sheet=2)
 all.years <- c(2021,2017,2013,2009,2005)
 all.parties <- c("CDU/CSU","SPD","AfD","FDP","Die Linke","Bündnis 90/Die Grünen")
 all.parties2 <- c("CDU/CSU","SPD","AfD","FDP","DIE LINKE","GRUENE")
 all.states <- c("SH","HH","NI","HB","NRW","HE","RP","BW","BY","SL","B","BB","MV","SN","SA","TH")
-
-
 data_treat <- data_now # create a treatment matrix
 data_treat[,grep("Erststimmen",names(data_treat))] <- 0
 data_treat[,grep("Zweitstimmen",names(data_treat))] <- 0
-
 for (i in 1:nrow(treat.raw)){# Schleife über alle Zeilen
-
   # Nur die Zeilen für die BTW, die wir berücksichtigen wollen
   if (as.numeric(treat.raw$Jahr[i]) %in% all.years){
    
@@ -519,11 +515,9 @@ for (i in 1:nrow(treat.raw)){# Schleife über alle Zeilen
     # identify which treatment in which district
     which.wkr <- as.numeric(treat.raw$WK[i])
     treat.wkr <- as.numeric(treat.raw$T_DM[i])
-
     # identify which treatment in which state
     which.land <- which(all.states == treat.raw$Land[i])
     treat.land <- as.numeric(treat.raw$T_LP[i])
-
     ## From here replacing values in the treatment matrix
     
     # District (only in the case when the leader run for a district)
@@ -537,7 +531,6 @@ for (i in 1:nrow(treat.raw)){# Schleife über alle Zeilen
       data_treat[data_treat$Jahr==which.year & data_treat$Land==which.land,
                  grep(all.parties2[which.party],names(data_treat))[2]] <- treat.land
     }
-
   }
     
 }
@@ -546,6 +539,4 @@ for (i in 1:nrow(treat.raw)){# Schleife über alle Zeilen
 save(data_treat, file = "Data/data_treat.RData")
 
 
-
 ```
-
