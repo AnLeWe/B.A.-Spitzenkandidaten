@@ -226,8 +226,8 @@ main.labels13 <- gsub("Ü", "UE", main.labels13)
 colnames(result1313) <- colnames(result1309) <- main.labels13
 
 # select columns
-result1313 <- result1313[,1:23]
-result1309 <- result1309[,1:23]
+result1313 <- result1313[,c(1:23, 54, 55)]
+result1309 <- result1309[,c(1:23, 54, 55)]
 
 # fuse CDU and CSU into CDU/CSU
 union1313 <- result1313[,grep("CDU",names(result1313))]
