@@ -1,0 +1,47 @@
+---
+title: "Analysis_FE"
+author: "Anna Werner"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(plm)
+```
+
+## Load Data
+
+```{r}
+load("Data/data_dif.RData")
+load("Data/data_treat.RData")
+```
+
+
+## Tries?
+
+```{r}
+Formula.PLM.baseline <- party.voteshare ~ 
+```
+
+```{r}
+## Anteile Gueltiger Stimmen
+ 
+
+## Anteile Alle Wahlberechtigte
+## 
+## 
+## aus Treatment Matric verschiedene Matrixen erstellen
+## 
+## alle SK Kandidaten !, alle anderen null
+## 
+## Alle nicht Nuller gleich 1
+```
+
+
+```{r}
+model1 <- plm()
+
+lm(c(Y ~c(X))
+```
+
