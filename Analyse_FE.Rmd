@@ -13,9 +13,96 @@ library(plm)
 ## Load Data
 
 ```{r}
-load("Data/data_dif.RData")
+load("Data/data_now.RData")
+load("Data/data_then.RData")
 load("Data/data_treat.RData")
 ```
+
+## Relative vote share
+
+```{r}
+
+share_now <- data_now[,12:23]/data_now[,rep(c(10,11),6)]
+share_then <- data_then[,12:23]/data_then[,rep(c(10,11),6)]
+
+share_dif0 <- share_now - share_then
+
+
+```
+
+
+# Specifying treatments
+
+```{r}
+treat_mat0 <- data_treat[,12:23]
+treat_mat0[treat_mat0>0] <- 1    # All treatment included
+
+#treat_mat0[treat_mat0==2|treat_mat0==4|treat_mat0==6] <- 0    # only chancellor candidates
+#treat_mat0[treat_mat0>0] <- 1    
+
+#treat_mat0[treat_mat0==1|treat_mat0==3|treat_mat0==5] <- 0    # only leading candidates without cc
+#treat_mat0[treat_mat0>0] <- 1    
+
+```
+
+
+
+
+# Data selection
+
+```{r}
+which.vote <- 1   # Erststimme or Zweitstimme?
+contamination <- 0 # Contamination yes or no?
+
+if (contamination==0){
+  if (which.vote==1){
+    share_dif <- share_dif0[,seq(1,11,by=2)]
+    treat_mat <- treat_mat0[,seq(1,11,by=2)]
+  } else {
+    share_dif <- share_dif0[,seq(2,12,by=2)]
+    treat_mat <- treat_mat0[,seq(2,12,by=2)]
+  }
+} else {
+  if (which.vote==1){
+    share_dif <- share_dif0[,seq(1,11,by=2)]
+    treat_mat <- treat_mat0[,seq(2,12,by=2)]
+  } else {
+    share_dif <- share_dif0[,seq(2,12,by=2)]
+    treat_mat <- treat_mat0[,seq(1,11,by=2)]
+  }
+}
+
+```
+
+# Year index
+
+```{r}
+year <- data_now$Jahr
+
+year <- rep(year,ncol(share_dif))
+
+```
+
+
+# Party index
+
+```{r}
+party <- c(1:6)
+
+party <- rep(party,each=nrow(share_dif))
+
+```
+
+
+## Regression
+
+```{r}
+
+summary(lm(unlist(share_dif)~unlist(treat_mat)  ))
+summary(lm(unlist(share_dif)~unlist(treat_mat) * as.factor(party) * as.factor(year)) )
+
+```
+
 
 
 ## Tries?
