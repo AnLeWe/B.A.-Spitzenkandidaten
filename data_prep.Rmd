@@ -386,7 +386,7 @@ result0502 <- result0502[,1:23]
 # fuse CDU and CSU into CDU/CSU
 union0505 <- result0505[,grep("CDU",names(result0505))]
 csu0505 <- result0505[,grep("CSU",names(result0505))]
-union0505[is.na(union0505[,1]),] <- csu0909[is.na(union0505[,1]),]
+union0505[is.na(union0505[,1]),] <- csu0505[is.na(union0505[,1]),]
 result0505[,grep("CDU",names(result0505))] <- union0505
 
 result0505 <- result0505[,grep("CSU",names(result0505),invert=T)]
