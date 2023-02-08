@@ -486,6 +486,8 @@ data_dif$Nr <- data_now$Nr
 data_dif$Gebiet <- data_now$Gebiet
 data_dif$Land <- data_now$Land
 data_dif$Jahr <- data_now$Jahr
+data_dif$Ost <- data_dif[data_dif[,23] == c(13, 12, 15, 14, 16)] <- 1 # Sonderfall Berlin? Land 11
+result0202 <- btw02_raw[btw02_raw[,3]!=99 & !is.na(btw02_raw[,3]),]
 ```
 
 
