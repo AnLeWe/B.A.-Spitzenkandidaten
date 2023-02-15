@@ -29,10 +29,53 @@ share_dif0 <- share_now - share_then
 ```
 
 
+# Some descriptive observations
+
+
+Here, we create an array:
+
+1: districts
+2: parties
+3: district vs PR
+
+```{r}
+
+share_dif_arr <- array(NA,dim=c(nrow(share_dif0),ncol(share_dif0)/2,2))
+
+share_dif_arr[,,1] <- as.matrix(share_dif0[,seq(1,11,by=2)])
+share_dif_arr[,,2] <- as.matrix(share_dif0[,seq(2,12,by=2)])
+
+treat_mat0 <- data_treat[,12:23]
+
+treat_arr <- array(NA,dim=c(nrow(treat_mat0),ncol(treat_mat0)/2,2))
+
+treat_arr[,,1] <- as.matrix(treat_mat0[,seq(1,11,by=2)])
+treat_arr[,,2] <- as.matrix(treat_mat0[,seq(2,12,by=2)])
+
+print("Frequencies of treatment values (district)")
+table(treat_arr[,,1])
+print("Frequencies of treatment values (PR)")
+table(treat_arr[,,2])
+
+par(mfrow=c(1,2))
+for (i.fig in 1:2){
+  boxplot(c(share_dif_arr[,,i.fig]) ~ c(treat_arr[,,i.fig]),
+          xlab="Treatment",ylab="Vote difference in %-p",
+          main=c("District cand","Party list")[i.fig])
+  abline(h=0,lty=2)
+}
+
+
+
+
+```
+
+
+
 # Specifying treatments
 
 ```{r}
-# treat_mat0 <- data_treat[,12:23]
+ treat_mat0 <- data_treat[,12:23]
 # treat_mat0[treat_mat0>0] <- 1    # All treatment included
 
 treat_mat0[treat_mat0==2|treat_mat0==4|treat_mat0==6] <- 0    # only chancellor candidates
