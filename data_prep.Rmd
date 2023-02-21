@@ -520,6 +520,36 @@ save(data_then, file = "Data/data_then.RData")
 ```
 
 
+# Add Time Dummy Variables
+
+```{r}
+# Year dummy 2005
+data_now$d2 <- NA
+data_now$d2[data_now$Jahr == 2005] <- 1
+data_now$d2[data_now$Jahr %in% c(2009, 2013, 2017, 2021)] <- 0
+
+# Year dummy 2009
+data_now$d3 <- NA
+data_now$d3[data_now$Jahr == 2009] <- 1
+data_now$d3[data_now$Jahr %in% c(2005, 2013, 2017, 2021)] <- 0
+
+# Year dummy 2013
+data_now$d4 <- NA
+data_now$d4[data_now$Jahr == 2013] <- 1
+data_now$d4[data_now$Jahr %in% c(2005, 2009, 2017, 2021)] <- 0
+
+# Year dummy 2017
+data_now$d5 <- NA
+data_now$d5[data_now$Jahr == 2017] <- 1
+data_now$d5[data_now$Jahr %in% c(2005, 2009, 2013, 2021)] <- 0
+
+# Year dummy 2021
+data_now$d6 <- NA
+data_now$d6[data_now$Jahr == 2021] <- 1
+data_now$d6[data_now$Jahr %in% c(2005, 2009, 2013, 2017)] <- 0
+```
+
+
 ## Matrix der Treatments
 
 ```{r}
