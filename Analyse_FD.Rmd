@@ -1,0 +1,178 @@
+---
+title: "First Differences"
+author: "Anna Werner & Susumu Shikano"
+date: "2023-02-21"
+output: html_document
+---
+
+```{r , include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Load data
+
+```{r}
+load("Data/analysis_dat.RData")
+```
+
+
+## Creating first difference
+
+### Election results
+
+We first compute the relative vote shares: 
+
+```{r}
+
+  all.rel.votes <-  all.abs.votes/all.abs.total[,rep(3,6),,,] 
+  # If one uses valid votes: rep(3,6)
+  # If one uses all voters: rep(2,6)
+  # If one uses all eligible citizens: rep(1,6)
+
+```
+
+Subsequently, we create the first differences:
+
+
+```{r}
+  all.rel.votes.fd <- all.rel.votes[,,,1:5,1] - all.rel.votes[,,,1:5,2]
+
+  # Note that there will be no FD for 2002, therefore we have n(year)=5.
+
+  hist(all.rel.votes.fd)
+```
+
+### Treatment
+
+```{r}
+
+all.treat.dummy <- all.treat
+all.treat.dummy[all.treat.dummy>0] <- 1
+
+table(all.treat.dummy)
+
+all.treat.dummy.fd <- array(NA,dim=c(299,6,2,5))
+for (i.time in 1:5){
+  all.treat.dummy.fd[,,,i.time] <-  
+    all.treat.dummy[,,,i.time] - all.treat.dummy[,,,i.time+1] 
+}
+
+table(all.treat.dummy.fd)
+
+```
+
+## index array
+
+Year index
+
+```{r}
+year.index <- all.treat.dummy.fd
+
+year.index[,,,1] <- 2021
+year.index[,,,2] <- 2017
+year.index[,,,3] <- 2013
+year.index[,,,4] <- 2009
+year.index[,,,5] <- 2005
+
+table(year.index)
+
+```
+
+Party index
+
+```{r}
+party.index <- all.treat.dummy.fd
+
+party.index[,1,,] <- "CDU"
+party.index[,2,,] <- "SPD"
+party.index[,3,,] <- "AFD"
+party.index[,4,,] <- "FDP"
+party.index[,5,,] <- "LIN"
+party.index[,6,,] <- "GRU"
+
+table(party.index)
+```
+
+## First difference models
+
+```{r}
+
+
+for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
+
+  all.results <- vector("list",3) # empty list to store the results
+
+  votes.in.array <- all.rel.votes.fd[,,i.smdpr,]
+  votes <- c(all.rel.votes.fd[,,i.smdpr,] )
+  treat <- c(all.treat.dummy.fd[,,i.smdpr,] )
+  year  <- as.factor(c(year.index[,,i.smdpr,] ))
+  party <- as.factor(c(party.index[,,i.smdpr,] ))
+  cross.treat <- c(all.treat.dummy.fd[,,c(2,1)[i.smdpr],] )
+
+  lm.dat <- cbind(votes,treat,year,party,cross.treat)
+  
+  ## Model with year and party fixed effects.
+  print(c("Erststimme (H1a)","Zweitstimme  (H1b)")[i.smdpr])
+  print(summary(lm.out <- lm(votes~ treat + year * party)))
+
+  all.results[[1]] <- lm.out
+  
+  ## Model with cross treatment (contamination)
+
+  print(c("Erststimme (H1a)","Zweitstimme  (H1b)")[i.smdpr])
+  print(summary(lm.out <- lm(votes~ treat + cross.treat + year * party)))
+  
+  all.results[[2]] <- lm.out
+  
+  all.results[[3]] <- lm.dat
+  all.results[[4]] <- votes.in.array
+  
+  if (i.smdpr==1) all.results.smd <- all.results
+  if (i.smdpr==2) all.results.pr <- all.results
+}
+
+
+```
+
+### Diagnostics I: Serial correlated errors
+
+
+```{r}
+
+#to.be.tested <- all.results.smd[[1]]  # Diagnostics for the model Erststimme
+to.be.tested <- all.results.pr[[1]] # Diagnostics for the model Zweitstimme
+temp.dat <- all.results.smd[[3]]
+temp.depv <- all.results.smd[[4]]
+
+residuals <- residuals(to.be.tested)
+residuals <- array(residuals,dim=dim(temp.depv))
+
+summary(lm.out <- lm(c(residuals[,,5:2]) ~ c(residuals[,,4:1])))
+
+plot(c(residuals[,,5:2]) ~ c(residuals[,,4:1]),
+     ylab="t",xlab="t-1")
+abline(lm.out)
+
+```
+
+
+### Diagnostics II: Exogeneity of the treatment
+
+We regress the treatment variable on x_t on y_t-1
+
+```{r}
+
+# District candidacy: Treatment for SMD
+summary(lm(c(all.treat[,,1,]) ~ c(all.rel.votes[,,1,,2])))
+
+# PR list candidacy: Treatment for PR
+summary(lm(c(all.treat[,,2,]) ~ c(all.rel.votes[,,2,,2])))
+
+
+```
+
+
+
+
+
