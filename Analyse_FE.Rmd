@@ -13,9 +13,7 @@ library(plm)
 ## Load Data
 
 ```{r}
-load("Data/data_now.RData")
-load("Data/data_then.RData")
-load("Data/data_treat.RData")
+load("Data/analysis_dat.RData")
 ```
 
 ## Relative vote share
@@ -72,17 +70,17 @@ for (i.fig in 1:2){
 
 
 
-# Specifying treatments
+# Specifying treatments and data selection
 
 ```{r}
  treat_mat0 <- data_treat[,12:23]
 # treat_mat0[treat_mat0>0] <- 1    # All treatment included
 
-treat_mat0[treat_mat0==2|treat_mat0==4|treat_mat0==6] <- 0    # only chancellor candidates
-treat_mat0[treat_mat0>0] <- 1    
+#treat_mat0[treat_mat0==2|treat_mat0==4|treat_mat0==6] <- 0    # only chancellor candidates
+#treat_mat0[treat_mat0>0] <- 1    
 
-# treat_mat0[treat_mat0==1|treat_mat0==3|treat_mat0==5] <- 0    # only leading candidates without cc
-# treat_mat0[treat_mat0>0] <- 1
+ treat_mat0[treat_mat0==1|treat_mat0==3|treat_mat0==5] <- 0    # only leading candidates without cc
+ treat_mat0[treat_mat0>0] <- 1
 
 # treat_mat0[treat_mat0==1|treat_mat0==2] <- 0    # candidates who have run for direct mandate before
 # treat_mat0[treat_mat0>0] <- 1

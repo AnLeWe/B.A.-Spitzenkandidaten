@@ -707,7 +707,7 @@ save(data_now,
      all.treat,
      all.wkr.name,
      all.land,
-  file = "Data/analysis_dat")
+  file = "Data/analysis_dat.RData")
      
 
 
