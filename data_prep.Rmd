@@ -513,6 +513,10 @@ library(plyr)
 data_now <- rbind.fill(result2121,result1717,result1313,result0909,result0505)
 data_then <- rbind.fill(result2117,result1713,result1309,result0905,result0502)
 
+## Save data for subsequent analyses
+save(data_now, file = "Data/data_now.RData")
+save(data_then, file = "Data/data_then.RData")
+
 ```
 
 
@@ -728,9 +732,6 @@ save(data_now,
 ```{r}
 
 
-## Save data for subsequent analyses
-save(data_now, file = "Data/data_now.RData")
-save(data_then, file = "Data/data_then.RData")
 
 ## not yet data_dif
 data_dif <- data_now[,4:23] - data_then[,4:23]
