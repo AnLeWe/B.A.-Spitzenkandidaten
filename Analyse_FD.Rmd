@@ -17,6 +17,27 @@ load("Data/analysis_dat.RData")
 ```
 
 
+## Switch for party selection
+
+```{r}
+
+## Do not select only one party. This won't work!
+
+party.selection <- c(1:6) # C S A F L G
+#party.selection <- c(3:6) # ohne C und S
+#party.selection <- c(1:2) # nur C und S
+
+
+```
+
+
+```{r}
+all.abs.votes <- all.abs.votes[,party.selection,,,]
+all.treat     <- all.treat[,party.selection,,]
+
+```
+
+
 ## Creating first difference
 
 ### Election results
@@ -25,7 +46,7 @@ We first compute the relative vote shares:
 
 ```{r}
 
-  all.rel.votes <-  all.abs.votes/all.abs.total[,rep(3,6),,,] 
+  all.rel.votes <-  all.abs.votes/all.abs.total[,rep(3,length(party.selection)),,,] 
   # If one uses valid votes: rep(3,6)
   # If one uses all voters: rep(2,6)
   # If one uses all eligible citizens: rep(1,6)
@@ -52,7 +73,7 @@ all.treat.dummy[all.treat.dummy>0] <- 1
 
 table(all.treat.dummy)
 
-all.treat.dummy.fd <- array(NA,dim=c(299,6,2,5))
+all.treat.dummy.fd <- array(NA,dim=c(299,length(party.selection),2,5))
 for (i.time in 1:5){
   all.treat.dummy.fd[,,,i.time] <-  
     all.treat.dummy[,,,i.time] - all.treat.dummy[,,,i.time+1] 
@@ -84,12 +105,10 @@ Party index
 ```{r}
 party.index <- all.treat.dummy.fd
 
-party.index[,1,,] <- "CDU"
-party.index[,2,,] <- "SPD"
-party.index[,3,,] <- "AFD"
-party.index[,4,,] <- "FDP"
-party.index[,5,,] <- "LIN"
-party.index[,6,,] <- "GRU"
+party.labels <- c("CDU","SPD","AFD","FDP","LIN","GRU")[party.selection]
+for (i.party in 1:length(party.selection)){
+  party.index[,i.party,,] <- party.labels[i.party]
+}
 
 table(party.index)
 ```
@@ -120,7 +139,7 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   
   ## Model with cross treatment (contamination)
 
-  print(c("Erststimme (H1a)","Zweitstimme  (H1b)")[i.smdpr])
+  print(c("Contamination Erststimme (H2a)","Contamination Zweitstimme  (H2b)")[i.smdpr])
   print(summary(lm.out <- lm(votes~ treat + cross.treat + year * party)))
   
   all.results[[2]] <- lm.out
@@ -137,29 +156,40 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
 ### Diagnostics I: Serial correlated errors
 
+We regress u_t on u_t-1. If the effect is significant, there are serially correlated errors.
 
 ```{r}
 
-#to.be.tested <- all.results.smd[[1]]  # Diagnostics for the model Erststimme
-to.be.tested <- all.results.pr[[1]] # Diagnostics for the model Zweitstimme
+for (i.smdpd in 1:2){
+  if (i.smdpd==1){
+    to.be.tested <- all.results.smd[[1]]  # Diagnostics for the model Erststimme
+  }else{
+    to.be.tested <- all.results.pr[[1]] # Diagnostics for the model Zweitstimme
+  }
+  
 temp.dat <- all.results.smd[[3]]
 temp.depv <- all.results.smd[[4]]
 
 residuals <- residuals(to.be.tested)
 residuals <- array(residuals,dim=dim(temp.depv))
 
-summary(lm.out <- lm(c(residuals[,,5:2]) ~ c(residuals[,,4:1])))
-
+print(c("Erststimme","Zweitstimme")[i.smdpd])
+print(
+   
+   summary(lm.out <- lm(c(residuals[,,5:2]) ~ c(residuals[,,4:1])))
+)
 plot(c(residuals[,,5:2]) ~ c(residuals[,,4:1]),
      ylab="t",xlab="t-1")
 abline(lm.out)
+
+}
 
 ```
 
 
 ### Diagnostics II: Exogeneity of the treatment
 
-We regress the treatment variable on x_t on y_t-1
+We regress the treatment variable on x_t on y_t-1. If the effect is significant, the assumption of the strict exogeneity is violated.
 
 ```{r}
 
@@ -173,6 +203,36 @@ summary(lm(c(all.treat[,,2,]) ~ c(all.rel.votes[,,2,,2])))
 ```
 
 
+## Implementation of Chaisemartin and D’Haultfoeuille's estimator
+
+
+
+```{r}
+
+for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
+
+  votes <- all.rel.votes.fd[,,i.smdpr,] 
+  treat.raw <- all.treat.dummy[,,i.smdpr,] 
+  treat <- all.treat.dummy.fd[,,i.smdpr,] 
+  year  <- year.index[,,i.smdpr,] 
+  party <- party.index[,,i.smdpr,] 
+  cross.treat <- all.treat.dummy.fd[,,c(2,1)[i.smdpr],] 
+
+  treat.types <- treat
+
+  for (i.year in 1:dim(votes)[3]){ # loop over years
+    treat.types[,,i.year][treat.raw[,,i.year]==1 & treat.raw[,,i.year+1]==1] <- 2
+  }
+  table(treat.types)
+  
+  did.plus <- mean(votes[treat.types==1],na.rm=T) - mean(votes[treat.types==0],na.rm=T)
+  did.minus <- mean(votes[treat.types==2],na.rm=T) - mean(votes[treat.types==-1],na.rm=T)
+  
+  did.est <- (did.plus * sum(treat.types==1) + did.minus * sum(treat.types==-1))/sum(treat.types==1|treat.types==-1)
+
+  print(did.est)
+}
+```
 
 
 
