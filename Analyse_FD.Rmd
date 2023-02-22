@@ -1,7 +1,7 @@
 ---
 title: "First Differences"
 author: "Anna Werner & Susumu Shikano"
-date: "2023-02-21"
+date: "`r Sys.Date()`"
 output: html_document
 ---
 
@@ -47,9 +47,9 @@ We first compute the relative vote shares:
 ```{r}
 
   all.rel.votes <-  all.abs.votes/all.abs.total[,rep(3,length(party.selection)),,,] 
-  # If one uses valid votes: rep(3,6)
-  # If one uses all voters: rep(2,6)
-  # If one uses all eligible citizens: rep(1,6)
+  # If one uses valid votes: rep(3,length(party.selection))
+  # If one uses all voters: rep(2,length(party.selection))
+  # If one uses all eligible citizens: rep(1,length(party.selection))
 
 ```
 
@@ -139,7 +139,7 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   
   ## Model with cross treatment (contamination)
 
-  print(c("Contamination Erststimme (H2a)","Contamination Zweitstimme  (H2b)")[i.smdpr])
+  print(c("Contamination on Erststimme (H2b)","Contamination on Zweitstimme  (H2a)")[i.smdpr])
   print(summary(lm.out <- lm(votes~ treat + cross.treat + year * party)))
   
   all.results[[2]] <- lm.out
@@ -173,6 +173,10 @@ temp.depv <- all.results.smd[[4]]
 residuals <- residuals(to.be.tested)
 residuals <- array(residuals,dim=dim(temp.depv))
 
+# exclude outliers
+#residuals0 <- residuals
+#residuals[residuals>.15] <- NA
+
 print(c("Erststimme","Zweitstimme")[i.smdpd])
 print(
    
@@ -205,7 +209,7 @@ summary(lm(c(all.treat[,,2,]) ~ c(all.rel.votes[,,2,,2])))
 
 ## Implementation of Chaisemartin and D’Haultfoeuille's estimator
 
-
+Not completed...
 
 ```{r}
 
