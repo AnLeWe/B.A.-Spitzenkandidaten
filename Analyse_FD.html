@@ -11,7 +11,7 @@
 
 <meta name="author" content="Anna Werner &amp; Susumu Shikano" />
 
-<meta name="date" content="2023-02-21" />
+<meta name="date" content="2023-02-22" />
 
 <title>First Differences</title>
 
@@ -358,7 +358,7 @@ display: none;
 
 <h1 class="title toc-ignore">First Differences</h1>
 <h4 class="author">Anna Werner &amp; Susumu Shikano</h4>
-<h4 class="date">2023-02-21</h4>
+<h4 class="date">2023-02-22</h4>
 
 </div>
 
@@ -466,7 +466,7 @@ table(party.index)</code></pre>
   
   ## Model with cross treatment (contamination)
 
-  print(c(&quot;Contamination Erststimme (H2a)&quot;,&quot;Contamination Zweitstimme  (H2b)&quot;)[i.smdpr])
+  print(c(&quot;Contamination on Erststimme (H2b)&quot;,&quot;Contamination on Zweitstimme  (H2a)&quot;)[i.smdpr])
   print(summary(lm.out &lt;- lm(votes~ treat + cross.treat + year * party)))
   
   all.results[[2]] &lt;- lm.out
@@ -527,7 +527,7 @@ table(party.index)</code></pre>
 ## Multiple R-squared:  0.7529, Adjusted R-squared:  0.752 
 ## F-statistic: 882.2 on 27 and 7818 DF,  p-value: &lt; 2.2e-16
 ## 
-## [1] &quot;Contamination Erststimme (H2a)&quot;
+## [1] &quot;Contamination on Erststimme (H2b)&quot;
 ## 
 ## Call:
 ## lm(formula = votes ~ treat + cross.treat + year * party)
@@ -628,7 +628,7 @@ table(party.index)</code></pre>
 ## Multiple R-squared:  0.8316, Adjusted R-squared:  0.831 
 ## F-statistic:  1470 on 27 and 8041 DF,  p-value: &lt; 2.2e-16
 ## 
-## [1] &quot;Contamination Zweitstimme  (H2b)&quot;
+## [1] &quot;Contamination on Zweitstimme  (H2a)&quot;
 ## 
 ## Call:
 ## lm(formula = votes ~ treat + cross.treat + year * party)
@@ -694,6 +694,10 @@ temp.depv &lt;- all.results.smd[[4]]
 
 residuals &lt;- residuals(to.be.tested)
 residuals &lt;- array(residuals,dim=dim(temp.depv))
+
+# exclude outliers
+#residuals0 &lt;- residuals
+#residuals[residuals&gt;.15] &lt;- NA
 
 print(c(&quot;Erststimme&quot;,&quot;Zweitstimme&quot;)[i.smdpd])
 print(
@@ -796,6 +800,7 @@ summary(lm(c(all.treat[,,2,]) ~ c(all.rel.votes[,,2,,2])))</code></pre>
 </div>
 <div id="implementation-of-chaisemartin-and-dhaultfoeuilles-estimator" class="section level2">
 <h2>Implementation of Chaisemartin and D’Haultfoeuille’s estimator</h2>
+<p>Not completed…</p>
 <pre class="r"><code>for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
   votes &lt;- all.rel.votes.fd[,,i.smdpr,] 
