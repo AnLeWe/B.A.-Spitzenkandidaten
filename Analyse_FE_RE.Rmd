@@ -1,0 +1,203 @@
+---
+title: "Fixed effects and Random effects"
+author: "Anna Werner & Susumu Shikano"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+
+```{r , include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Load data
+
+```{r}
+load("Data/analysis_dat.RData")
+```
+
+
+
+## Switch for party selection
+
+```{r}
+
+## Do not select only one party. This won't work!
+
+party.selection <- c(1:6) # C S A F L G
+#party.selection <- c(3:6) # ohne C und S
+#party.selection <- c(1:2) # nur C und S
+
+
+```
+
+
+```{r}
+all.abs.votes <- all.abs.votes[,party.selection,,,]
+all.treat     <- all.treat[,party.selection,,]
+
+```
+
+
+
+### Election results
+
+We first compute the relative vote shares: 
+
+```{r}
+
+  all.rel.votes <-  all.abs.votes/all.abs.total[,rep(3,length(party.selection)),,,] 
+  # If one uses valid votes: rep(3,6)
+  # If one uses all voters: rep(2,6)
+  # If one uses all eligible citizens: rep(1,6)
+
+  # We delete the past results
+  all.rel.votes <- all.rel.votes[,,,,1]
+
+```
+
+
+
+### Treatment
+
+```{r}
+
+all.treat.dummy <- all.treat
+all.treat.dummy[all.treat.dummy>0] <- 1
+
+table(all.treat.dummy)
+
+
+
+```
+
+## index array
+
+Year index
+
+```{r}
+year.index <- all.treat.dummy
+
+year.index[,,,1] <- 2021
+year.index[,,,2] <- 2017
+year.index[,,,3] <- 2013
+year.index[,,,4] <- 2009
+year.index[,,,5] <- 2005
+year.index[,,,6] <- 2002
+
+table(year.index)
+
+```
+
+Party index
+
+```{r}
+party.index <- all.treat.dummy
+
+party.labels <- c("CDU","SPD","AFD","FDP","LIN","GRU")[party.selection]
+for (i.party in 1:length(party.selection)){
+  party.index[,i.party,,] <- party.labels[i.party]
+}
+
+table(party.index)
+```
+
+## Create the district index
+
+### Naive and inaccurate based on the district name
+
+```{r}
+unique.wkr.name <- unique(c(all.wkr.name))
+
+all.wkr.index0 <- matrix(as.numeric(as.factor(all.wkr.name)),
+                              nrow=nrow(all.wkr.name))
+
+range(all.wkr.index0)
+
+all.wkr.index <- all.treat.dummy
+for (i.party in 1:length(party.selection)){
+  for (i.smdpr in 1:2){
+    all.wkr.index[,i.party,i.smdpr,] <- all.wkr.index0
+  }
+}
+
+range(all.wkr.index)
+
+```
+
+
+### Better one based on manual assignments
+
+```{r}
+library(readxl)
+wkr.assignment <- read_xlsx("Data/data_now_WK_Einteilung.xlsx",sheet=3)
+
+wkr.assignment <- wkr.assignment[,paste0("Nr.",c("21","17","13","09","05","02"))]
+wkr.assignment <- as.matrix(wkr.assignment)
+
+range(wkr.assignment)
+
+all.wkr.index <- all.treat.dummy
+for (i.party in 1:length(party.selection)){
+  for (i.smdpr in 1:2){
+    all.wkr.index[,i.party,i.smdpr,] <- wkr.assignment
+  }
+}
+
+range(all.wkr.index)
+length(unique(c(all.wkr.index)))
+```
+
+
+
+
+# Fixed effect models
+
+
+```{r}
+
+for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
+
+  all.results <- vector("list",3) # empty list to store the results
+
+  votes.in.array <- all.rel.votes[,,i.smdpr,]
+  votes <- c(all.rel.votes[,,i.smdpr,] )
+  treat <- c(all.treat.dummy[,,i.smdpr,] )
+  year  <- as.factor(c(year.index[,,i.smdpr,] ))
+  party <- as.factor(c(party.index[,,i.smdpr,] ))
+  district <- as.factor(c(all.wkr.index[,,i.smdpr,]))
+  cross.treat <- c(all.treat.dummy[,,c(2,1)[i.smdpr],] )
+
+  #district[district==337] <- 15 # Merkel
+  #district[district==388] <- 61 # Potsdam
+  #district[district==364] <- 61 # Potsdam
+  #district[district==366] <- 14 # Bartsch
+  
+  lm.dat <- cbind(votes,treat,year,party,district,cross.treat)
+  
+  ## Model with year and party fixed effects.
+  print(c("Erststimme (H1a)","Zweitstimme  (H1b)")[i.smdpr])
+  options(max.print=100)
+  print(summary(lm.out <- lm(votes~ treat +  year * party + district )))
+
+  all.results[[1]] <- lm.out
+  
+  ## Model with cross treatment (contamination)
+
+  print(c("Contamination Erststimme (H2b)","Contamination Zweitstimme  (H2a)")[i.smdpr])
+  print(summary(lm.out <- lm(votes~ treat + cross.treat + year * party + district)))
+  
+  all.results[[2]] <- lm.out
+  
+  all.results[[3]] <- lm.dat
+  all.results[[4]] <- votes.in.array
+  
+  if (i.smdpr==1) all.results.smd <- all.results
+  if (i.smdpr==2) all.results.pr <- all.results
+}
+
+
+```
+
+
