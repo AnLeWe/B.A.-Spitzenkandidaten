@@ -480,10 +480,15 @@ colnames(result0202) <- main.labels02
 # select columns
 result0202 <- result0202[,1:21]
 
+# Change 0 to NA ... no candidacy
+result0202[,10:21][result0202[,10:21]==0] <- NA
+
+
 # fuse CDU and CSU into CDU/CSU
 union0202 <- result0202[,grep("CDU",names(result0202))]
 csu0202 <- result0202[,grep("CSU",names(result0202))]
-union0202[is.na(union0202[,1]),] <- csu0202[is.na(union0202[,1]),]
+union0202[is.na(union0202[,1])|union0202[,1]==0,] <-
+         csu0202[is.na(union0202[,1])|union0202[,1]==0,]
 result0202[,grep("CDU",names(result0202))] <- union0202
 
 result0202 <- result0202[,grep("CSU",names(result0202),invert=T)]
@@ -498,7 +503,9 @@ colnames(result0202)[12:13] <- c("CDU/CSU Erststimmen","CDU/CSU Zweitstimmen")
 # sort based on the WKR number
 result0202 <- result0202[order(result0202$Nr),]
 
+# Recode WKR nummer
 result0202$Land <- result0202$Land -900
+
 
 
 ```
@@ -721,7 +728,24 @@ for (i.year in 1:6){
 ```
 
 
+Wahlkreiszuordnung für fixed-effect models
 
+
+```{r}
+wkr.assignment <- read_xlsx("Data/data_now_WK_Einteilung.xlsx",sheet=3)
+
+wkr.assignment <- wkr.assignment[,paste0("Nr.",c("21","17","13","09","05","02"))]
+wkr.assignment <- as.matrix(wkr.assignment)
+
+
+all.wkr.index <- all.treat
+for (i.party in 1:length(party.selection)){
+  for (i.smdpr in 1:2){
+    all.wkr.index[,i.party,i.smdpr,] <- wkr.assignment
+  }
+}
+
+```
 
 
 
@@ -737,6 +761,7 @@ save(data_now,
      all.abs.total,
      all.treat,
      all.wkr.name,
+     all.wkr.index,
      all.land,
   file = "Data/analysis_dat.RData")
      
@@ -759,20 +784,4 @@ save(data_now,
 
 
 
-
-```{r}
-
-
-
-## not yet data_dif
-data_dif <- data_now[,4:23] - data_then[,4:23]
-data_dif$Nr <- data_now$Nr
-data_dif$Gebiet <- data_now$Gebiet
-data_dif$Land <- data_now$Land
-data_dif$Jahr <- data_now$Jahr
-#data_dif$Ost <- data_dif[data_dif[,23] == c(13, 12, 15, 14, 16)] <- 1 # Sonderfall Berlin? Land 11
-#result0202 <- btw02_raw[btw02_raw[,3]!=99 & !is.na(btw02_raw[,3]),]
-
-
-```
 
