@@ -174,19 +174,20 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   #district[district==364] <- 61 # Potsdam
   #district[district==366] <- 14 # Bartsch
   
-  lm.dat <- cbind(votes,treat,year,party,district,cross.treat)
+  lm.dat <- as.data.frame(votes)
+  lm.dat <- cbind(lm.dat,treat,year,party,district,cross.treat)
   
   ## Model with year and party fixed effects.
   print(c("Erststimme (H1a)","Zweitstimme  (H1b)")[i.smdpr])
   options(max.print=100)
-  print(summary(lm.out <- lm(votes~ treat +  year * party + district )))
+  print(summary(lm.out <- lm(votes~ treat +  year * party + district*party )))
 
   all.results[[1]] <- lm.out
   
   ## Model with cross treatment (contamination)
 
   print(c("Contamination Erststimme (H2b)","Contamination Zweitstimme  (H2a)")[i.smdpr])
-  print(summary(lm.out <- lm(votes~ treat + cross.treat + year * party + district)))
+  print(summary(lm.out <- lm(votes~ treat + cross.treat + year * party + district*party)))
   
   all.results[[2]] <- lm.out
   
@@ -197,7 +198,80 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   if (i.smdpr==2) all.results.pr <- all.results
 }
 
+options(max.print=10000)
+```
+
+## Some diagnostic checks
+
+
+Checking residuals
+
+```{r}
+
+results.te <- all.results.smd[[1]]
+
+#plot(results.te)
+
+
+data.te <- all.results.smd[[3]]
+
+data.te <- data.te[!is.na(data.te[,1]),]
+dim(data.te)
+
+residuals <- residuals(results.te)
+predicted <- predict(results.te)
+
+length(residuals)
+
+
+plot(residuals ~ data.te$treat)
+tapply(residuals , as.factor( data.te$treat),mean)
+
+
 
 ```
 
+
+
+```{r}
+par(mfrow=c(1,2))
+
+plot(data.te$votes[data.te$treat==1] ~ predicted[data.te$treat==1],
+     xlab="Predicted",ylab="Actual")
+abline(coef=c(0,1),lty=2)
+labels <- data.te[data.te$treat==1,3:5]
+
+text( predicted[data.te$treat==1],data.te$votes[data.te$treat==1] ,
+     rownames(data.te)[data.te$treat==1],
+     pos=1,cex=0.7)
+
+
+plot(residuals[data.te$treat==1] ~ predicted[data.te$treat==1],
+     xlab="Predicted",ylab="Rersiduals")
+
+labels <- data.te[data.te$treat==1,3:5]
+
+text( predicted[data.te$treat==1],residuals[data.te$treat==1] ,
+     rownames(data.te)[data.te$treat==1],
+     pos=1,cex=0.7)
+
+
+labels
+
+```
+
+
+
+```{r}
+
+wkr.fe <- coefficients(results.te)
+wkr.fe <- wkr.fe[grep("district",names(wkr.fe))]
+
+hist(wkr.fe)
+
+wkr.fe[order(wkr.fe)][1:5]
+
+wkr.fe[order(wkr.fe,decreasing=TRUE)][1:5]
+
+```
 
