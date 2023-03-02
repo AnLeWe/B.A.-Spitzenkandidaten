@@ -480,10 +480,15 @@ colnames(result0202) <- main.labels02
 # select columns
 result0202 <- result0202[,1:21]
 
+# Change 0 to NA ... no candidacy
+result0202[,10:21][result0202[,10:21]==0] <- NA
+
+
 # fuse CDU and CSU into CDU/CSU
 union0202 <- result0202[,grep("CDU",names(result0202))]
 csu0202 <- result0202[,grep("CSU",names(result0202))]
-union0202[is.na(union0202[,1]),] <- csu0202[is.na(union0202[,1]),]
+union0202[is.na(union0202[,1])|union0202[,1]==0,] <-
+         csu0202[is.na(union0202[,1])|union0202[,1]==0,]
 result0202[,grep("CDU",names(result0202))] <- union0202
 
 result0202 <- result0202[,grep("CSU",names(result0202),invert=T)]
@@ -498,7 +503,9 @@ colnames(result0202)[12:13] <- c("CDU/CSU Erststimmen","CDU/CSU Zweitstimmen")
 # sort based on the WKR number
 result0202 <- result0202[order(result0202$Nr),]
 
+# Recode WKR nummer
 result0202$Land <- result0202$Land -900
+
 
 
 ```
