@@ -28,7 +28,7 @@ load("Data/analysis_dat.RData")
 party.selection <- c(1:6) # C S A F L G
 #party.selection <- c(3:6) # ohne C und S
 #party.selection <- c(1:2) # nur C und S
-
+#party.selection <- c(1:4,6) # ohne Linke
 
 ```
 
@@ -103,54 +103,12 @@ for (i.party in 1:length(party.selection)){
 table(party.index)
 ```
 
-## Create the district index
-
-### Naive and inaccurate based on the district name
+Modification of wahlkreis index array
 
 ```{r}
-unique.wkr.name <- unique(c(all.wkr.name))
-
-all.wkr.index0 <- matrix(as.numeric(as.factor(all.wkr.name)),
-                              nrow=nrow(all.wkr.name))
-
-range(all.wkr.index0)
-
-all.wkr.index <- all.treat.dummy
-for (i.party in 1:length(party.selection)){
-  for (i.smdpr in 1:2){
-    all.wkr.index[,i.party,i.smdpr,] <- all.wkr.index0
-  }
-}
-
-range(all.wkr.index)
+all.wkr.index <- all.wkr.index[,party.selection,,]
 
 ```
-
-
-### Better one based on manual assignments
-
-```{r}
-library(readxl)
-wkr.assignment <- read_xlsx("Data/data_now_WK_Einteilung.xlsx",sheet=3)
-
-wkr.assignment <- wkr.assignment[,paste0("Nr.",c("21","17","13","09","05","02"))]
-wkr.assignment <- as.matrix(wkr.assignment)
-
-range(wkr.assignment)
-
-all.wkr.index <- all.treat.dummy
-for (i.party in 1:length(party.selection)){
-  for (i.smdpr in 1:2){
-    all.wkr.index[,i.party,i.smdpr,] <- wkr.assignment
-  }
-}
-
-range(all.wkr.index)
-length(unique(c(all.wkr.index)))
-```
-
-
-
 
 # Fixed effect models
 
@@ -161,13 +119,14 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
   all.results <- vector("list",3) # empty list to store the results
 
-  votes.in.array <- all.rel.votes[,,i.smdpr,]
-  votes <- c(all.rel.votes[,,i.smdpr,] )
-  treat <- c(all.treat.dummy[,,i.smdpr,] )
-  year  <- as.factor(c(year.index[,,i.smdpr,] ))
-  party <- as.factor(c(party.index[,,i.smdpr,] ))
-  district <- as.factor(c(all.wkr.index[,,i.smdpr,]))
-  cross.treat <- c(all.treat.dummy[,,c(2,1)[i.smdpr],] )
+  votes.in.array <- all.rel.votes[,,i.smdpr,1:5]
+  votes <- c(all.rel.votes[,,i.smdpr,1:5] )
+  last.votes <- c(all.rel.votes[,,i.smdpr,2:6] )
+  treat <- c(all.treat.dummy[,,i.smdpr,1:5] )
+  year  <- as.factor(c(year.index[,,i.smdpr,1:5] ))
+  party <- as.factor(c(party.index[,,i.smdpr,1:5] ))
+  district <- as.factor(c(all.wkr.index[,,i.smdpr,1:5]))
+  cross.treat <- c(all.treat.dummy[,,c(2,1)[i.smdpr],1:5] )
 
   #district[district==337] <- 15 # Merkel
   #district[district==388] <- 61 # Potsdam
@@ -180,14 +139,14 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   ## Model with year and party fixed effects.
   print(c("Erststimme (H1a)","Zweitstimme  (H1b)")[i.smdpr])
   options(max.print=100)
-  print(summary(lm.out <- lm(votes~ treat +  year * party + district*party )))
+  print(summary(lm.out <- lm(votes~ treat + last.votes+ year * party + district*party )))
 
   all.results[[1]] <- lm.out
   
   ## Model with cross treatment (contamination)
 
   print(c("Contamination Erststimme (H2b)","Contamination Zweitstimme  (H2a)")[i.smdpr])
-  print(summary(lm.out <- lm(votes~ treat + cross.treat + year * party + district*party)))
+  print(summary(lm.out <- lm(votes~ treat + last.votes +cross.treat + year * party + district*party)))
   
   all.results[[2]] <- lm.out
   
@@ -231,7 +190,7 @@ tapply(residuals , as.factor( data.te$treat),mean)
 
 ```
 
-
+### Plotting the actual votes, predicted votes and residuals for treated district
 
 ```{r}
 par(mfrow=c(1,2))
@@ -274,4 +233,25 @@ wkr.fe[order(wkr.fe)][1:5]
 wkr.fe[order(wkr.fe,decreasing=TRUE)][1:5]
 
 ```
+
+### Exogeneoity
+
+```{r}
+
+options(max.print=100)
+# District candidacy: Treatment for SMD
+summary(lm(c(all.treat.dummy[,,1,1:5]) ~ c(all.rel.votes[,,1,2:6])+
+                                          c(party.index[,,1,1:5])*
+                                           as.factor(c(all.wkr.index[,,1,1:5]))))
+
+# PR list candidacy: Treatment for PR
+summary(lm(c(all.treat.dummy[,,2,1:5]) ~ c(all.rel.votes[,,2,2:6])+
+                                          c(party.index[,,2,1:5])*
+                                           as.factor(c(all.wkr.index[,,2,1:5]))))
+options(max.print=10000)
+
+```
+
+
+
 
