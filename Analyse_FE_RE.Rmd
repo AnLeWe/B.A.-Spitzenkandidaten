@@ -145,8 +145,8 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   ## Model with cross treatment (contamination)
 
   print(c("Contamination Erststimme (H2b)","Contamination Zweitstimme  (H2a)")[i.smdpr])
-  print(summary(lm.out <- lm(votes~ treat + last.votes +
-                               cross.treat + year * party + district*party)))
+  print(summary(lm.out <- lm(votes~ treat + cross.treat + 
+                               last.votes + year * party + district*party)))
   
   all.results[[2]] <- lm.out
   
@@ -205,9 +205,10 @@ text( predicted[data.te$treat==1],data.te$votes[data.te$treat==1] ,
      rownames(data.te)[data.te$treat==1],
      pos=1,cex=0.7)
 
-
+summary(lm.rsd <- lm(residuals[data.te$treat==1] ~ predicted[data.te$treat==1]))
 plot(residuals[data.te$treat==1] ~ predicted[data.te$treat==1],
      xlab="Predicted",ylab="Rersiduals")
+abline(lm.rsd)
 
 labels <- data.te[data.te$treat==1,3:5]
 
