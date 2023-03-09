@@ -27,13 +27,27 @@ party.selection <- c(1:6) # C S A F L G
 #party.selection <- c(3:6) # ohne C und S
 #party.selection <- c(1:2) # nur C und S
 
+```
+
+## Switch for denominator to compute the vote share
+
+  1: eligible citizens
+  2: all voters
+  3: all valid votes
+
+```{r}
+
+vote.denom <- 3
 
 ```
+
+
 
 
 ```{r}
 all.abs.votes <- all.abs.votes[,party.selection,,,]
 all.treat     <- all.treat[,party.selection,,]
+all.rel.votes <-  all.abs.votes/all.abs.total[,rep(vote.denom,length(party.selection)),,,] 
 
 ```
 
@@ -42,18 +56,7 @@ all.treat     <- all.treat[,party.selection,,]
 
 ### Election results
 
-We first compute the relative vote shares: 
-
-```{r}
-
-  all.rel.votes <-  all.abs.votes/all.abs.total[,rep(3,length(party.selection)),,,] 
-  # If one uses valid votes: rep(3,length(party.selection))
-  # If one uses all voters: rep(2,length(party.selection))
-  # If one uses all eligible citizens: rep(1,length(party.selection))
-
-```
-
-Subsequently, we create the first differences:
+We create the first differences:
 
 
 ```{r}
@@ -161,31 +164,43 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
 We regress u_t on u_t-1. If the effect is significant, there are serially correlated errors.
 
+Note: We first have to assign individual districts at t to those at t-1.
+
 ```{r}
 
 for (i.smdpd in 1:2){
   if (i.smdpd==1){
     to.be.tested <- all.results.smd[[1]]  # Diagnostics for the model Erststimme
+    temp.dat <- all.results.smd[[3]]
+    temp.depv <- all.results.smd[[4]]
+
   }else{
     to.be.tested <- all.results.pr[[1]] # Diagnostics for the model Zweitstimme
+    temp.dat <- all.results.pr[[3]]
+    temp.depv <- all.results.pr[[4]]
   }
   
-temp.dat <- all.results.smd[[3]]
-temp.depv <- all.results.smd[[4]]
 
 residuals <- residuals(to.be.tested)
 residuals <- array(residuals,dim=dim(temp.depv))
 
-# exclude outliers
-#residuals0 <- residuals
-#residuals[residuals>.15] <- NA
+simple.district.idx <- all.wkr.index[,1,1,]
+
+# stacking residuals at t and t-1
+## loop from BTW 2021 to 2009
+
+current.resid <- past.resid <- residuals[,,1:4]
+for (i.btw in 1:4){
+  # create the key to match the current and past districts
+  key <- match(simple.district.idx[,i.btw],simple.district.idx[,i.btw+1])
+  past.resid[,,i.btw] <- residuals[key,,i.btw+1]
+}
 
 print(c("Erststimme","Zweitstimme")[i.smdpd])
 print(
-   
-   summary(lm.out <- lm(c(residuals[,,5:2]) ~ c(residuals[,,4:1])))
+   summary(lm.out <- lm(c(current.resid) ~ c(past.resid)))
 )
-plot(c(residuals[,,5:2]) ~ c(residuals[,,4:1]),
+plot(c(current.resid) ~ c(past.resid),
      ylab="t",xlab="t-1")
 abline(lm.out)
 
@@ -196,23 +211,72 @@ abline(lm.out)
 
 ### Diagnostics II: Exogeneity of the treatment
 
-We regress the treatment variable on x_t on y_t-1. If the effect is significant, the assumption of the strict exogeneity is violated.
+We are testing by using Wooldridge's test. That is, we include the treatment variable at t+1. For this purpose, we lose the most recent BTW 2021.
+
+Also here, we have to take care about the redistricting.
+
+
 
 ```{r}
 
-# District candidacy: Treatment for SMD
-summary(lm(c(all.treat[,,1,]) ~ c(all.rel.votes[,,1,,2])))
 
-# PR list candidacy: Treatment for PR
-summary(lm(c(all.treat[,,2,]) ~ c(all.rel.votes[,,2,,2])))
+for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
+
+  all.results <- vector("list",3) # empty list to store the results
+
+  votes.in.array <- all.rel.votes.fd[,,i.smdpr,2:5]
+  votes <- c(votes.in.array)
+  treat <- c(all.treat.dummy.fd[,,i.smdpr,2:5] )
+  year  <- as.factor(c(year.index[,,i.smdpr,2:5] ))
+  year <- relevel(year,ref="2005")
+  party <- factor(c(party.index[,,i.smdpr,2:5] ),
+                  levels=c("CDU","SPD","AFD","FDP","LIN","GRU")) # C S A F L G
+  party <- relevel(party,ref="CDU")
+  cross.treat <- c(all.treat.dummy.fd[,,c(2,1)[i.smdpr],2:5] )
+  
+  # treatment at t+1
+  treat.t1 <- all.treat.dummy.fd[,,i.smdpr,1:4] 
+  cross.treat.t1 <- all.treat.dummy.fd[,,c(2,1)[i.smdpr],1:4] 
+  # we assign the correct district
+  simple.district.idx <- all.wkr.index[,1,1,]
+  for (i.btw in 2:5){ # loop over btw2017 to btw2005
+    key <- match(simple.district.idx[,i.btw],simple.district.idx[,i.btw-1])
+    treat.t1[,,i.btw-1] <- treat.t1[key,,i.btw-1]
+    cross.treat.t1[,,i.btw-1] <- cross.treat.t1[key,,i.btw-1]
+  }
+  treat.t1 <- c(treat.t1)
+  cross.treat.t1 <- c(cross.treat.t1)
+
+  lm.dat <- cbind(votes,treat,year,party,cross.treat,treat.t1,cross.treat.t1)
+  
+  ## Model with year and party fixed effects.
+  print(c("Erststimme (H1a)","Zweitstimme  (H1b)")[i.smdpr])
+  print(summary(lm.out <- lm(votes~ treat + treat.t1+ year * party)))
+
+  all.results[[1]] <- lm.out
+  
+  ## Model with cross treatment (contamination)
+
+  print(c("Contamination on Erststimme (H2b)","Contamination on Zweitstimme  (H2a)")[i.smdpr])
+  print(summary(lm.out <- lm(votes~ treat + treat.t1+
+                                     cross.treat + cross.treat.t1+
+                               year * party)))
+  
+  all.results[[2]] <- lm.out
+  
+  all.results[[3]] <- lm.dat
+  all.results[[4]] <- votes.in.array
+  
+  if (i.smdpr==1) all.results.smd <- all.results
+  if (i.smdpr==2) all.results.pr <- all.results
+}
 
 
 ```
 
 
 
-
-
+## NOT COMPLETED!!!!!!!!!!!!!!!
 
 
 ## First difference models with the lagged depenent variable
@@ -224,16 +288,16 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
   all.results <- vector("list",3) # empty list to store the results
 
-  votes.in.array <- all.rel.votes.fd[,,i.smdpr,]
-  votes <- c(all.rel.votes.fd[,,i.smdpr,1:5] )
-  last.votes <- c(all.rel.votes.fd[,,i.smdpr,2:6] )
-  treat <- c(all.treat.dummy.fd[,,i.smdpr,1:5] )
-  year  <- as.factor(c(year.index[,,i.smdpr,1:5] ))
-  year <- relevel(year,ref="2005")
-  party <- factor(c(party.index[,,i.smdpr,1:5] ),
+  votes.in.array <- all.rel.votes.fd[,,i.smdpr,1:4]
+  votes <- c(all.rel.votes.fd[,,i.smdpr,1:4] )
+  last.votes <- c(all.rel.votes.fd[,,i.smdpr,2:5] )
+  treat <- c(all.treat.dummy.fd[,,i.smdpr,1:4] )
+  year  <- as.factor(c(year.index[,,i.smdpr,1:4] ))
+  year <- relevel(year,ref="2009")
+  party <- factor(c(party.index[,,i.smdpr,1:4] ),
                   levels=c("CDU","SPD","AFD","FDP","LIN","GRU")) # C S A F L G
   party <- relevel(party,ref="CDU")
-  cross.treat <- c(all.treat.dummy.fd[,,c(2,1)[i.smdpr],1:5] )
+  cross.treat <- c(all.treat.dummy.fd[,,c(2,1)[i.smdpr],1:4] )
 
   lm.dat <- cbind(votes,last.votes,treat,year,party,cross.treat)
   
@@ -264,31 +328,31 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
 We regress u_t on u_t-1. If the effect is significant, there are serially correlated errors.
 
+Note: We first have to assign individual districts at t to those at t-1.
+
 ```{r}
 
 for (i.smdpd in 1:2){
   if (i.smdpd==1){
-    to.be.tested <- all.results.smd[[1]]  # Diagnostics for the model Erststimme
+    to.be.tested <- all.results.smd[[2]]  # Diagnostics for the model Erststimme
+    temp.dat <- all.results.smd[[3]]
+    temp.depv <- all.results.smd[[4]]
   }else{
-    to.be.tested <- all.results.pr[[1]] # Diagnostics for the model Zweitstimme
+    to.be.tested <- all.results.pr[[2]] # Diagnostics for the model Zweitstimme
+    temp.dat <- all.results.pr[[3]]
+    temp.depv <- all.results.pr[[4]]
   }
   
-temp.dat <- all.results.smd[[3]]
-temp.depv <- all.results.smd[[4]]
 
 residuals <- residuals(to.be.tested)
 residuals <- array(residuals,dim=dim(temp.depv))
 
-# exclude outliers
-#residuals0 <- residuals
-#residuals[residuals>.15] <- NA
-
 print(c("Erststimme","Zweitstimme")[i.smdpd])
 print(
    
-   summary(lm.out <- lm(c(residuals[,,5:2]) ~ c(residuals[,,4:1])))
+   summary(lm.out <- lm(c(residuals[,,4:2]) ~ c(residuals[,,3:1])))
 )
-plot(c(residuals[,,5:2]) ~ c(residuals[,,4:1]),
+plot(c(residuals[,,4:2]) ~ c(residuals[,,3:1]),
      ylab="t",xlab="t-1")
 abline(lm.out)
 
