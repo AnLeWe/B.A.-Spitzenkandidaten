@@ -167,7 +167,7 @@ Checking residuals
 
 ```{r}
 
-results.te <- all.results.smd[[1]]
+results.te <- all.results.smd[[1]] # nur für Erststimme? 
 
 #plot(results.te)
 
@@ -194,7 +194,60 @@ tapply(residuals , as.factor( data.te$treat),mean)
 ### Plotting the actual votes, predicted votes and residuals for treated district
 
 ```{r}
-par(mfrow=c(1,2))
+par(mfrow=c(1,2)) # nur für Erststimme? 
+
+plot(data.te$votes[data.te$treat==1] ~ predicted[data.te$treat==1],
+     xlab="Predicted",ylab="Actual")
+abline(coef=c(0,1),lty=2)
+labels <- data.te[data.te$treat==1,3:5]
+
+text( predicted[data.te$treat==1],data.te$votes[data.te$treat==1] ,
+     rownames(data.te)[data.te$treat==1],
+     pos=1,cex=0.7)
+
+summary(lm.rsd <- lm(residuals[data.te$treat==1] ~ predicted[data.te$treat==1]))
+plot(residuals[data.te$treat==1] ~ predicted[data.te$treat==1],
+     xlab="Predicted",ylab="Rersiduals")
+abline(lm.rsd)
+
+labels <- data.te[data.te$treat==1,3:5]
+
+text( predicted[data.te$treat==1],residuals[data.te$treat==1] ,
+     rownames(data.te)[data.te$treat==1],
+     pos=1,cex=0.7)
+
+
+labels
+
+```
+
+```{r}
+
+results.te <- all.results.pr[[1]] # nur für Zweitstimme? 
+
+#plot(results.te)
+
+
+data.te <- all.results.pr[[3]]
+
+data.te <- data.te[!is.na(data.te$votes)&!is.na(data.te$last.votes),]
+dim(data.te)
+
+
+residuals <- residuals(results.te)
+predicted <- predict(results.te)
+
+length(residuals)
+
+
+plot(residuals ~ data.te$treat)
+tapply(residuals , as.factor( data.te$treat),mean)
+
+
+
+```
+```{r}
+par(mfrow=c(1,2)) # nur für Zweitstimme? 
 
 plot(data.te$votes[data.te$treat==1] ~ predicted[data.te$treat==1],
      xlab="Predicted",ylab="Actual")
