@@ -4,7 +4,7 @@ author: "Anna Werner & Susumu Shikano"
 date: "`r Sys.Date()`"
 output: html_document
 ---
-
+±
 ```{r , include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -168,8 +168,8 @@ Note: We first have to assign individual districts at t to those at t-1.
 
 ```{r}
 
-for (i.smdpd in 1:2){
-  if (i.smdpd==1){
+for (i.smdpr in 1:2){
+  if (i.smdpr==1){
     to.be.tested <- all.results.smd[[1]]  # Diagnostics for the model Erststimme
     temp.dat <- all.results.smd[[3]]
     temp.depv <- all.results.smd[[4]]
@@ -196,7 +196,7 @@ for (i.btw in 1:4){
   past.resid[,,i.btw] <- residuals[key,,i.btw+1]
 }
 
-print(c("Erststimme","Zweitstimme")[i.smdpd])
+print(c("Erststimme","Zweitstimme")[i.smdpr])
 print(
    summary(lm.out <- lm(c(current.resid) ~ c(past.resid)))
 )
