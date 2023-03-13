@@ -47,7 +47,7 @@ We first compute the relative vote shares:
 
 ```{r}
 
-  all.rel.votes <-  all.abs.votes/all.abs.total[,rep(3,length(party.selection)),,,] 
+  all.rel.votes <-  all.abs.votes/all.abs.total[,rep(1,length(party.selection)),,,] 
   # If one uses valid votes: rep(3,6)
   # If one uses all voters: rep(2,6)
   # If one uses all eligible citizens: rep(1,6)
@@ -194,7 +194,7 @@ tapply(residuals , as.factor( data.te$treat),mean)
 ### Plotting the actual votes, predicted votes and residuals for treated district
 
 ```{r}
-par(mfrow=c(1,2)) # nur für Erststimme? 
+par(mfrow=c(1,2)) 
 
 plot(data.te$votes[data.te$treat==1] ~ predicted[data.te$treat==1],
      xlab="Predicted",ylab="Actual")
@@ -220,60 +220,6 @@ text( predicted[data.te$treat==1],residuals[data.te$treat==1] ,
 labels
 
 ```
-
-```{r}
-
-results.te <- all.results.pr[[1]] # nur für Zweitstimme? 
-
-#plot(results.te)
-
-
-data.te <- all.results.pr[[3]]
-
-data.te <- data.te[!is.na(data.te$votes)&!is.na(data.te$last.votes),]
-dim(data.te)
-
-
-residuals <- residuals(results.te)
-predicted <- predict(results.te)
-
-length(residuals)
-
-
-plot(residuals ~ data.te$treat)
-tapply(residuals , as.factor( data.te$treat),mean)
-
-
-
-```
-```{r}
-par(mfrow=c(1,2)) # nur für Zweitstimme? 
-
-plot(data.te$votes[data.te$treat==1] ~ predicted[data.te$treat==1],
-     xlab="Predicted",ylab="Actual")
-abline(coef=c(0,1),lty=2)
-labels <- data.te[data.te$treat==1,3:5]
-
-text( predicted[data.te$treat==1],data.te$votes[data.te$treat==1] ,
-     rownames(data.te)[data.te$treat==1],
-     pos=1,cex=0.7)
-
-summary(lm.rsd <- lm(residuals[data.te$treat==1] ~ predicted[data.te$treat==1]))
-plot(residuals[data.te$treat==1] ~ predicted[data.te$treat==1],
-     xlab="Predicted",ylab="Rersiduals")
-abline(lm.rsd)
-
-labels <- data.te[data.te$treat==1,3:5]
-
-text( predicted[data.te$treat==1],residuals[data.te$treat==1] ,
-     rownames(data.te)[data.te$treat==1],
-     pos=1,cex=0.7)
-
-
-labels
-
-```
-
 
 
 ```{r}
@@ -343,5 +289,51 @@ options(max.print=10000)
 ```
 
 
+### Diagnostics I: Serial correlated errors
 
+We regress u_t on u_t-1. If the effect is significant, there are serially correlated errors.
+
+Note: We first have to assign individual districts at t to those at t-1.
+
+```{r}
+
+for (i.smdpr in 1:2){
+  if (i.smdpr==1){
+    to.be.tested <- all.results.smd[[1]]  # Diagnostics for the model Erststimme
+    temp.dat <- all.results.smd[[3]]
+    temp.depv <- all.results.smd[[4]]
+
+  }else{
+    to.be.tested <- all.results.pr[[1]] # Diagnostics for the model Zweitstimme
+    temp.dat <- all.results.pr[[3]]
+    temp.depv <- all.results.pr[[4]]
+  }
+  
+
+residuals <- residuals(to.be.tested)
+residuals <- array(residuals,dim=dim(temp.depv))
+
+simple.district.idx <- all.wkr.index[,1,1,]
+
+# stacking residuals at t and t-1
+## loop from BTW 2021 to 2009
+
+current.resid <- past.resid <- residuals[,,1:4]
+for (i.btw in 1:4){
+  # create the key to match the current and past districts
+  key <- match(simple.district.idx[,i.btw],simple.district.idx[,i.btw+1])
+  past.resid[,,i.btw] <- residuals[key,,i.btw+1]
+}
+
+print(c("Erststimme","Zweitstimme")[i.smdpr])
+print(
+   summary(lm.out <- lm(c(current.resid) ~ c(past.resid)))
+)
+plot(c(current.resid) ~ c(past.resid),
+     ylab="t",xlab="t-1")
+abline(lm.out)
+
+}
+
+```
 
