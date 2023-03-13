@@ -4,7 +4,7 @@ author: "Anna Werner & Susumu Shikano"
 date: "`r Sys.Date()`"
 output: html_document
 ---
-
+±
 ```{r , include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -23,10 +23,17 @@ load("Data/analysis_dat.RData")
 
 ## Do not select only one party. This won't work!
 
-party.selection <- c(1:6) # C S A F L G
-#party.selection <- c(3:6) # ohne C und S
-#party.selection <- c(1:2) # nur C und S
-
+party.selection <- c(1:6)     # C S A F L G
+#party.selection <- c(1:2)     # nur C und S
+#party.selection <- c(3:6)     # ohne C und S
+#party.selection <- c(3:4,6)   # ohne C, S und L
+#party.selection <- c(2:6)     # ohne C
+#party.selection <- c(1,3:6)   # ohne S
+#party.selection <- c(1:4,6)   # ohne Linke
+#party.selection <- c(1:2,4:6) # ohne AfD
+#party.selection <- c(2,4:6)   #ohne C und A
+#party.selection <- c(1:3,5:6) #ohne F
+#party.selection <- c(1:5)      #ohne G
 ```
 
 ## Switch for denominator to compute the vote share
@@ -37,7 +44,7 @@ party.selection <- c(1:6) # C S A F L G
 
 ```{r}
 
-vote.denom <- 3
+vote.denom <- 1
 
 ```
 
@@ -168,8 +175,8 @@ Note: We first have to assign individual districts at t to those at t-1.
 
 ```{r}
 
-for (i.smdpd in 1:2){
-  if (i.smdpd==1){
+for (i.smdpr in 1:2){
+  if (i.smdpr==1){
     to.be.tested <- all.results.smd[[1]]  # Diagnostics for the model Erststimme
     temp.dat <- all.results.smd[[3]]
     temp.depv <- all.results.smd[[4]]
@@ -196,7 +203,7 @@ for (i.btw in 1:4){
   past.resid[,,i.btw] <- residuals[key,,i.btw+1]
 }
 
-print(c("Erststimme","Zweitstimme")[i.smdpd])
+print(c("Erststimme","Zweitstimme")[i.smdpr])
 print(
    summary(lm.out <- lm(c(current.resid) ~ c(past.resid)))
 )
@@ -205,6 +212,10 @@ plot(c(current.resid) ~ c(past.resid),
 abline(lm.out)
 
 }
+
+```
+```{r}
+#pwfdtest(votes~ treat + cross.treat + year * party, data = lm.dat, h0 = "fe")
 
 ```
 
