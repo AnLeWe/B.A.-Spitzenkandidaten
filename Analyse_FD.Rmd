@@ -126,7 +126,7 @@ table(party.index)
 ## First difference models
 
 ```{r}
-
+library(sandwich)
 
 for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
@@ -142,18 +142,30 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   party <- relevel(party,ref="CDU")
   cross.treat <- c(all.treat.dummy.fd[,,c(2,1)[i.smdpr],] )
 
-  lm.dat <- cbind(votes,treat,year,party,cross.treat)
+  
+  lm.dat <- cbind(votes,treat,cross.treat)
+  lm.dat <- as.data.frame(lm.dat)
+  lm.dat$year <- year
+  lm.dat$party <- party
+  lm.dat <- na.omit(lm.dat)
   
   ## Model with year and party fixed effects.
   print(c("Erststimme (H1a)","Zweitstimme  (H1b)")[i.smdpr])
-  print(summary(lm.out <- lm(votes~ treat + year * party)))
+  print(summary(lm.out <- lm(votes~ treat + year * party, data=lm.dat)))
+
+  print(c("Robust standard error"))
+  print(sqrt(diag(vcovHC(lm.out, type = 'HC'))))
 
   all.results[[1]] <- lm.out
   
   ## Model with cross treatment (contamination)
 
   print(c("Contamination on Erststimme (H2b)","Contamination on Zweitstimme  (H2a)")[i.smdpr])
-  print(summary(lm.out <- lm(votes~ treat + cross.treat + year * party)))
+  print(summary(lm.out <- lm(votes~ treat + cross.treat + year * party, data=lm.dat)))
+
+  print(c("Robust standard error"))
+  print(sqrt(diag(vcovHC(lm.out, type = 'HC'))))
+
   
   all.results[[2]] <- lm.out
   
