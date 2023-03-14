@@ -7,6 +7,7 @@ output: html_document
 ±
 ```{r , include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(stargazer)
 ```
 
 
@@ -127,6 +128,7 @@ table(party.index)
 
 ```{r}
 library(sandwich)
+library("lmtest")
 
 for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
@@ -162,9 +164,14 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
   print(c("Contamination on Erststimme (H2b)","Contamination on Zweitstimme  (H2a)")[i.smdpr])
   print(summary(lm.out <- lm(votes~ treat + cross.treat + year * party, data=lm.dat)))
-
+  
+  # Adjust standard errors
   print(c("Robust standard error"))
-  print(sqrt(diag(vcovHC(lm.out, type = 'HC'))))
+   #print(robust_se <- (sqrt(diag(vcovHC(lm.out, type = 'HC')))))
+  print(coeftest(lm.out, vcov = vcovHC(lm.out, type = 'HC')))
+
+  # Stargazer output (with and without RSE)
+  #stargazer(lm.out, reg1, cl_robust, se = list(NULL, se_robust, NULL))
 
   
   all.results[[2]] <- lm.out
@@ -178,6 +185,22 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
 
 ```
+
+```{r}
+
+t.1a <- 0.0145131/0.005126175
+t.1a
+
+t.2b <- 0.0042483/0.000614870
+t.2b
+
+t.1a <- 0.0070774/0.0005672975
+t.1a
+
+t.2a <- 0.0060133/0.0032950075
+t.2a
+```
+
 
 ### Diagnostics I: Serial correlated errors
 
