@@ -152,7 +152,7 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   lm.dat <- na.omit(lm.dat)
   
   ## Model with year and party fixed effects.
-  print(c("Erststimme (H1a)","Zweitstimme  (H1b)")[i.smdpr])
+  print(c("Erststimme (H1a)","Zweitstimme  (H1b)")[1])
   print(summary(lm.out <- lm(votes~ treat + year * party, data=lm.dat)))
 
   print(c("Robust standard error"))
@@ -162,16 +162,17 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   
   ## Model with cross treatment (contamination)
 
-  print(c("Contamination on Erststimme (H2b)","Contamination on Zweitstimme  (H2a)")[i.smdpr])
+  print(c("Contamination on Erststimme (H2b)","Contamination on Zweitstimme  (H2a)")[1])
   print(summary(lm.out <- lm(votes~ treat + cross.treat + year * party, data=lm.dat)))
   
   # Adjust standard errors
   print(c("Robust standard error"))
    #print(robust_se <- (sqrt(diag(vcovHC(lm.out, type = 'HC')))))
   print(coeftest(lm.out, vcov = vcovHC(lm.out, type = 'HC')))
-
+  
   # Stargazer output (with and without RSE)
-  #stargazer(lm.out, reg1, cl_robust, se = list(NULL, se_robust, NULL))
+  stargazer(lm.out, coef.rb, type = "text",
+          se = list(NULL, robust_se))
 
   
   all.results[[2]] <- lm.out
