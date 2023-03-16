@@ -202,6 +202,9 @@ t.2a <- 0.0060133/0.0032950075
 t.2a
 ```
 
+```{r}
+ggplot(data = ?, aes(x=))
+```
 
 ### Diagnostics I: Serial correlated errors
 

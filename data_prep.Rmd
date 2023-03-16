@@ -531,29 +531,49 @@ save(data_then, file = "Data/data_then.RData")
 
 ```{r}
 # Year dummy 2005
-data_now$d2 <- NA
-data_now$d2[data_now$Jahr == 2005] <- 1
-data_now$d2[data_now$Jahr %in% c(2009, 2013, 2017, 2021)] <- 0
+data_now$d05 <- NA
+data_now$d05[data_now$Jahr == 2005] <- 1
+data_now$d05[data_now$Jahr %in% c(2009, 2013, 2017, 2021)] <- 0
+
+data_then$d05 <- NA
+data_then$d05[data_then$Jahr == 2005] <- 1
+data_then$d05[data_then$Jahr %in% c(2009, 2013, 2017, 2021)] <- 0
 
 # Year dummy 2009
-data_now$d3 <- NA
-data_now$d3[data_now$Jahr == 2009] <- 1
-data_now$d3[data_now$Jahr %in% c(2005, 2013, 2017, 2021)] <- 0
+data_now$d09 <- NA
+data_now$d09[data_now$Jahr == 2009] <- 1
+data_now$d09[data_now$Jahr %in% c(2005, 2013, 2017, 2021)] <- 0
+
+data_then$d09 <- NA
+data_then$d09[data_then$Jahr == 2009] <- 1
+data_then$d09[data_then$Jahr %in% c(2005, 2013, 2017, 2021)] <- 0
 
 # Year dummy 2013
-data_now$d4 <- NA
-data_now$d4[data_now$Jahr == 2013] <- 1
-data_now$d4[data_now$Jahr %in% c(2005, 2009, 2017, 2021)] <- 0
+data_now$d13 <- NA
+data_now$d13[data_now$Jahr == 2013] <- 1
+data_now$d13[data_now$Jahr %in% c(2005, 2009, 2017, 2021)] <- 0
+
+data_then$d13 <- NA
+data_then$d13[data_then$Jahr == 2013] <- 1
+data_then$d13[data_then$Jahr %in% c(2005, 2009, 2017, 2021)] <- 0
 
 # Year dummy 2017
-data_now$d5 <- NA
-data_now$d5[data_now$Jahr == 2017] <- 1
-data_now$d5[data_now$Jahr %in% c(2005, 2009, 2013, 2021)] <- 0
+data_now$d17 <- NA
+data_now$d17[data_now$Jahr == 2017] <- 1
+data_now$d17[data_now$Jahr %in% c(2005, 2009, 2013, 2021)] <- 0
+
+data_then$d17 <- NA
+data_then$d17[data_then$Jahr == 2017] <- 1
+data_then$d17[data_then$Jahr %in% c(2005, 2009, 2013, 2021)] <- 0
 
 # Year dummy 2021
-data_now$d6 <- NA
-data_now$d6[data_now$Jahr == 2021] <- 1
-data_now$d6[data_now$Jahr %in% c(2005, 2009, 2013, 2017)] <- 0
+data_now$d21 <- NA
+data_now$d21[data_now$Jahr == 2021] <- 1
+data_now$d21[data_now$Jahr %in% c(2005, 2009, 2013, 2017)] <- 0
+
+data_then$d21 <- NA
+data_then$d21[data_then$Jahr == 2021] <- 1
+data_then$d21[data_then$Jahr %in% c(2005, 2009, 2013, 2017)] <- 0
 ```
 
 
@@ -732,7 +752,7 @@ Wahlkreiszuordnung für fixed-effect models
 
 
 ```{r}
-wkr.assignment <- read_xlsx("Data/data_now_WK_Einteilung.xlsx",sheet=3)
+wkr.assignment <- read_xlsx("Data/data_now_WK_Einteilung.xlsx",sheet=6)
 
 wkr.assignment <- wkr.assignment[,paste0("Nr.",c("21","17","13","09","05","02"))]
 wkr.assignment <- as.matrix(wkr.assignment)
@@ -765,8 +785,6 @@ save(data_now,
      all.land,
   file = "Data/analysis_dat.RData")
      
-
-
 ```
 
 
