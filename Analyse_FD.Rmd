@@ -129,6 +129,8 @@ table(party.index)
 ```{r}
 library(sandwich)
 library("lmtest")
+library("modelsummary")
+library("xtable")
 
 for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
@@ -168,11 +170,19 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   # Adjust standard errors
   print(c("Robust standard error"))
    #print(robust_se <- (sqrt(diag(vcovHC(lm.out, type = 'HC')))))
-  print(coeftest(lm.out, vcov = vcovHC(lm.out, type = 'HC')))
+  print(coef.rb <- coeftest(lm.out, vcov = vcovHC(lm.out, type = 'HC')))
+  #coeftest(lmfit, vcov = vcovHC(lmfit))
+  models <- list(lm.out, coef.rb)
   
-  # Stargazer output (with and without RSE)
-  stargazer(lm.out, coef.rb, type = "text",
-          se = list(NULL, robust_se))
+  # combined table
+  
+  stargazer(lm.out, coef.rb, title="Ergebnisse", type = "text",align=TRUE)
+  stargazer(lm.out, coef.rb, title="Ergebnisse", se=list(NULL, coef.rb), align=TRUE)
+ 
+  #print(modelsummary(models, output = "latex"))
+  #xtable(anova(lm.out, coef.rb))
+  #print(xtable(lm.out, caption = Hier wird einmal eine Caption stehen))
+       
 
   
   all.results[[2]] <- lm.out
@@ -187,24 +197,17 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
 ```
 
+## prepare data
+
 ```{r}
-
-t.1a <- 0.0145131/0.005126175
-t.1a
-
-t.2b <- 0.0042483/0.000614870
-t.2b
-
-t.1a <- 0.0070774/0.0005672975
-t.1a
-
-t.2a <- 0.0060133/0.0032950075
-t.2a
+dat.pr <- all.results.pr[[3]]
+dat.smd <- all.results.smd[[3]]
 ```
 
 ```{r}
-ggplot(data = ?, aes(x=))
+ #stargazer(all.results[[2]], coef.rb, type = "text")
 ```
+
 
 ### Diagnostics I: Serial correlated errors
 
