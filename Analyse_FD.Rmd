@@ -154,7 +154,7 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   lm.dat <- na.omit(lm.dat)
   
   ## Model with year and party fixed effects.
-  print(c("Erststimme (H1a)","Zweitstimme  (H1b)")[1])
+  print(c("Erststimme (H1a)","Zweitstimme  (H1b)")[i.smdpr])
   print(summary(lm.out <- lm(votes~ treat + year * party, data=lm.dat)))
 
   print(c("Robust standard error"))
@@ -164,7 +164,7 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   
   ## Model with cross treatment (contamination)
 
-  print(c("Contamination on Erststimme (H2b)","Contamination on Zweitstimme  (H2a)")[1])
+  print(c("Contamination on Erststimme (H2b)","Contamination on Zweitstimme  (H2a)")[i.smdpr])
   print(summary(lm.out <- lm(votes~ treat + cross.treat + year * party, data=lm.dat)))
   
   # Adjust standard errors
@@ -176,8 +176,11 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   
   # combined table
   
-  stargazer(lm.out, coef.rb, title="Ergebnisse", type = "text",align=TRUE)
-  stargazer(lm.out, coef.rb, title="Ergebnisse", se=list(NULL, coef.rb), align=TRUE)
+  print(c("Contamination on Erststimme (H2b)","Contamination on Zweitstimme  (H2a)")[i.smdpr])
+  stargazer(lm.out, coef.rb, title="Ergebnisse", type = "text",align=TRUE,
+            star.cutoffs = c(0.05,0.01,0.001))
+  stargazer(lm.out, coef.rb, title="Ergebnisse", se=list(NULL, coef.rb), align=TRUE,
+            star.cutoffs = c(0.05,0.01,0.001))
  
   #print(modelsummary(models, output = "latex"))
   #xtable(anova(lm.out, coef.rb))
