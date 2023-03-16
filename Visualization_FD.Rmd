@@ -1,0 +1,52 @@
+---
+title: "Visualization_FD_Results"
+author: "Susumu Shikano"
+date: "2023-03-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r }
+library(readxl)
+
+results<- read_xlsx("ModelSummaries.xlsx",sheet=2)
+
+
+```
+
+```{r}
+data.tv <- results[results$vote_d==1 & results$vote_i==1 & !is.na(results$vote_i),]
+
+
+```
+
+
+
+
+```{r}
+p.estimate <- as.numeric(data.tv$Estimate)
+se <- as.numeric(data.tv$SE)
+
+lower.b <- p.estimate - 1.96* se
+upper.b <- p.estimate + 1.96* se
+
+y.range <- range(c(lower.b,upper.b))
+
+plot(p.estimate,axes=F,
+     xlab="Parties included",ylab="Estimates",
+     ylim=y.range)
+for (i.party in 1:length(p.estimate)){
+  lines(c(i.party,i.party),# x-coordinate
+      c(lower.b[i.party],upper.b[i.party]))
+}
+axis(1,at=c(1:11),data.tv$Party,cex.axis=0.7)
+axis(2)
+
+
+```
+
+
+
