@@ -32,9 +32,9 @@ party.selection <- c(1:6)     # C S A F L G
 #party.selection <- c(1,3:6)   # ohne S
 #party.selection <- c(1:4,6)   # ohne Linke
 #party.selection <- c(1:2,4:6) # ohne AfD
-#party.selection <- c(2,4:6)   #ohne C und A
-#party.selection <- c(1:3,5:6) #ohne F
-#party.selection <- c(1:5)      #ohne G
+#party.selection <- c(2,4:6)   # ohne C und A
+#party.selection <- c(1:3,5:6) # ohne F
+#party.selection <- c(1:5)     # ohne G
 ```
 
 ## Switch for denominator to compute the vote share
@@ -128,9 +128,7 @@ table(party.index)
 
 ```{r}
 library(sandwich)
-library("lmtest")
-library("modelsummary")
-library("xtable")
+library(lmtest)
 
 for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
@@ -143,7 +141,7 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   year <- relevel(year,ref="2005")
   party <- factor(c(party.index[,,i.smdpr,] ),
                   levels=c("CDU","SPD","AFD","FDP","LIN","GRU")) # C S A F L G
-  party <- relevel(party,ref="CDU")
+  party <- relevel(party,ref="AFD")
   cross.treat <- c(all.treat.dummy.fd[,,c(2,1)[i.smdpr],] )
 
   
@@ -155,40 +153,26 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   
   ## Model with year and party fixed effects.
   print(c("Erststimme (H1a)","Zweitstimme  (H1b)")[i.smdpr])
-  print(summary(lm.out <- lm(votes~ treat + year * party, data=lm.dat)))
+  print(summary(lm.out1 <- lm(votes~ treat + year * party, data=lm.dat)))
 
   print(c("Robust standard error"))
-  print(sqrt(diag(vcovHC(lm.out, type = 'HC'))))
+  r.se1 <- sqrt(diag(vcovHC(lm.out1, type = 'HC')))
+  print(coef.rb1 <- coeftest(lm.out1, vcov = vcovHC(lm.out1, type = 'HC')))
 
-  all.results[[1]] <- lm.out
+  all.results[[1]] <- lm.out1
   
   ## Model with cross treatment (contamination)
 
   print(c("Contamination on Erststimme (H2b)","Contamination on Zweitstimme  (H2a)")[i.smdpr])
-  print(summary(lm.out <- lm(votes~ treat + cross.treat + year * party, data=lm.dat)))
+  print(summary(lm.out2 <- lm(votes~ treat + cross.treat + year * party, data=lm.dat)))
   
-  # Adjust standard errors
   print(c("Robust standard error"))
-   #print(robust_se <- (sqrt(diag(vcovHC(lm.out, type = 'HC')))))
-  print(coef.rb <- coeftest(lm.out, vcov = vcovHC(lm.out, type = 'HC')))
-  #coeftest(lmfit, vcov = vcovHC(lmfit))
-  models <- list(lm.out, coef.rb)
+  r.se2 <- sqrt(diag(vcovHC(lm.out2, type = 'HC')))
+  print(coef.rb2 <- coeftest(lm.out2, vcov = vcovHC(lm.out2, type = 'HC')))
   
-  # combined table
-  
-  print(c("Contamination on Erststimme (H2b)","Contamination on Zweitstimme  (H2a)")[i.smdpr])
-  stargazer(lm.out, coef.rb, title="Ergebnisse", type = "text",align=TRUE,
-            star.cutoffs = c(0.05,0.01,0.001))
-  stargazer(lm.out, coef.rb, title="Ergebnisse", se=list(NULL, coef.rb), align=TRUE,
-            star.cutoffs = c(0.05,0.01,0.001))
  
-  #print(modelsummary(models, output = "latex"))
-  #xtable(anova(lm.out, coef.rb))
-  #print(xtable(lm.out, caption = Hier wird einmal eine Caption stehen))
        
-
-  
-  all.results[[2]] <- lm.out
+  all.results[[2]] <- lm.out2
   
   all.results[[3]] <- lm.dat
   all.results[[4]] <- votes.in.array
@@ -200,9 +184,85 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
 ```
 
+## regression tables
+
+```{r}
+for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
+   
+# all models
+print(c("Contamination on Erststimme (H2b)","Contamination on Zweitstimme  (H2a)")[i.smdpr])
+stargazer(lm.out2, lm.out2, lm.out1, lm.out1,
+          title = c("Direct candidacy and party list placement on first votes", 
+                    "Direct candidacy and party list placement on second votes")[i.smdpr],
+          dep.var.labels = "Vote Share",
+          se = list(NULL, r.se2, NULL, r.se1),
+          column.labels = c("OLS", "RSE", "OLS", "RSE"),
+          star.cutoffs = c(0.05,0.01,0.001),
+          align = TRUE,
+          style = "apsr",
+          #type = "html",
+          out = c("table_1.txt", "table_2.txt")[i.smdpr]
+          #column.separate = c(1,2),
+          #ci = FALSE,
+          )
+  
+# models with cross.treat
+print(c("Contamination on Erststimme (H2b)","Contamination on Zweitstimme  (H2a)")[i.smdpr])
+stargazer(lm.out2, lm.out2, 
+          title = c("Direct candidacy and party list placement on first votes", 
+                    "Direct candidacy and party list placement on second votes")[i.smdpr],
+          dep.var.labels = "Vote Share",
+          column.labels = c("OLS", "RSE"),
+          se = list(NULL, r.se2),
+          star.cutoffs = c(0.05,0.01,0.001),
+          align = TRUE,
+          style = "apsr",
+          #type = "html",
+          out = c("rtable_1.txt", "rtable_2.txt")[i.smdpr]
+          )
+}
+
+# models all parties, only CDU & SPD, without CDU & SPD
+print(c("Contamination on Erststimme (H2b)","Contamination on Zweitstimme  (H2a)")[i.smdpr])
+stargazer(lm.out2, lm.out4, lm.out6,
+          title = c("Direct candidacy and party list placement on first votes", 
+                    "Direct candidacy and party list placement on second votes")[i.smdpr],
+          dep.var.labels = "Vote Share",
+          se = list(r.se2, r.se4, r.se6),
+          column.labels = c("All Parties", "Only CDU&SPD", "Without CDU&SPD"),
+          star.cutoffs = c(0.05,0.01,0.001),
+          align = TRUE,
+          style = "apsr",
+          #type = "html",
+          out = c("ptable_1.txt", "ptable_2.txt")[i.smdpr]
+          )
+```
+
+
+
+## index array
+
+Year index
+
+```{r}
+year.index <- all.treat.dummy.fd
+
+year.index[,,,1] <- 2021
+year.index[,,,2] <- 2017
+year.index[,,,3] <- 2013
+year.index[,,,4] <- 2009
+year.index[,,,5] <- 2005
+
+table(year.index)
+
+```
+
+
 ## prepare data
 
 ```{r}
+
+  
 dat.pr <- all.results.pr[[3]]
 dat.smd <- all.results.smd[[3]]
 ```
@@ -259,10 +319,7 @@ abline(lm.out)
 }
 
 ```
-```{r}
-#pwfdtest(votes~ treat + cross.treat + year * party, data = lm.dat, h0 = "fe")
 
-```
 
 
 ### Diagnostics II: Exogeneity of the treatment
