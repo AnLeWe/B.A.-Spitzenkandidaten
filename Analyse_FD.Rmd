@@ -30,15 +30,15 @@ See below what value corresponds to what party selection.
 
 ## Do not select only one party. This won't work!
 
-if (party.selec.switch==1) party.selection <- c(1:6)     # C S A F L G
-if (party.selec.switch==2) party.selection <- c(1:2)     # nur C und S
-if (party.selec.switch==3) party.selection <- c(3:6)     # ohne C und S
-if (party.selec.switch==4) party.selection <- c(3:4,6)   # ohne C, S und L
-if (party.selec.switch==5) party.selection <- c(2:6)     # ohne C
-if (party.selec.switch==6) party.selection <- c(1,3:6)   # ohne S
-if (party.selec.switch==7) party.selection <- c(1:4,6)   # ohne Linke
-if (party.selec.switch==8) party.selection <- c(1:2,4:6) # ohne AfD
-if (party.selec.switch==9) party.selection <- c(2,4:6)   # ohne C und A
+if (party.selec.switch==1) party.selection <- c(1:6)      # C S A F L G
+if (party.selec.switch==2) party.selection <- c(1:2)      # nur C und S
+if (party.selec.switch==3) party.selection <- c(3:6)      # ohne C und S
+if (party.selec.switch==4) party.selection <- c(3:4,6)    # ohne C, S und L
+if (party.selec.switch==5) party.selection <- c(2:6)      # ohne C
+if (party.selec.switch==6) party.selection <- c(1,3:6)    # ohne S
+if (party.selec.switch==7) party.selection <- c(1:4,6)    # ohne Linke
+if (party.selec.switch==8) party.selection <- c(1:2,4:6)  # ohne AfD
+if (party.selec.switch==9) party.selection <- c(2,4:6)    # ohne C und A
 if (party.selec.switch==10) party.selection <- c(1:3,5:6) # ohne F
 if (party.selec.switch==11) party.selection <- c(1:5)     # ohne G
 ```
@@ -176,7 +176,9 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   ## Model 
 
   print(c("DV: Erststimme","DV: Zweitstimme")[i.smdpr])
-  print(summary(lm.out <- lm(votes~ treat + treat.incumb + cross.treat + year * party, data=lm.dat)))
+  print(summary(lm.out <- lm(votes~ treat +
+                                  # + treat.incumb                                 # + robustness-check
+                                    cross.treat + year * party, data=lm.dat))) 
   
   print(c("Robust standard error"))
   r.se <- sqrt(diag(vcovHC(lm.out, type = 'HC')))
@@ -189,6 +191,8 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   
   all.results[[3]] <- lm.dat
   all.results[[4]] <- votes.in.array
+  
+  all.results[[5]] <- r.se
   
   if (i.smdpr==1) all.results.smd <- all.results
   if (i.smdpr==2) all.results.pr <- all.results
@@ -219,7 +223,7 @@ for (i.smdpr in 1:2){
     temp.depv <- all.results.smd[[4]]
 
   }else{
-    to.be.tested <- all.results.pr[[1]] # Diagnostics for the model Zweitstimme
+    to.be.tested <- all.results.pr[[1]]  # Diagnostics for the model Zweitstimme
     temp.dat <- all.results.pr[[3]]
     temp.depv <- all.results.pr[[4]]
   }
@@ -267,7 +271,7 @@ Also here, we have to take care about the redistricting.
 
 for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
-  all.results <- vector("list",3) # empty list to store the results
+  all.t1.results <- vector("list",3) # empty list to store the results
 
   votes.in.array <- all.rel.votes.fd[,,i.smdpr,2:5]
   votes <- c(votes.in.array)
@@ -277,7 +281,7 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   year <- relevel(year,ref="2005")
   party <- factor(c(party.index[,,i.smdpr,2:5] ),
                   levels=c("CDU","SPD","AFD","FDP","LIN","GRU")) # C S A F L G
-  party <- relevel(party,ref="CDU")
+  party <- relevel(party,ref="AFD")
   cross.treat <- c(all.treat.dummy.fd[,,c(2,1)[i.smdpr],2:5] )
   
   # treatment at t+1
@@ -304,13 +308,32 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   print(c("DV: Erststimme","DV: Zweitstimme")[i.smdpr])
   print(summary(lm.out <- lm(votes~ treat + treat.t1+
                                      cross.treat + cross.treat.t1+
-                                     treat.incumb + treat.incumb.t1 +
+                                     #treat.incumb + treat.incumb.t1 +
                                as.factor(year) * as.factor(party),
                              data=lm.dat)))
   
+  print(c("Robust standard error"))
+  r.se <- sqrt(diag(vcovHC(lm.out, type = 'HC')))
+  print(lm.out.robust <- coeftest(lm.out, vcov = vcovHC(lm.out, type = 'HC')))
+
+
+  all.t1.results[[1]] <- lm.out
+
+  all.t1.results[[2]] <- lm.out.robust
+  
+  all.t1.results[[3]] <- lm.dat
+  all.t1.results[[4]] <- votes.in.array
+  
+  all.t1.results[[5]] <- r.se
+  
+  if (i.smdpr==1) all.t1.results.smd <- all.t1.results
+  if (i.smdpr==2) all.t1.results.pr <- all.t1.results
 }
 
-
+save(all.t1.results.smd,
+     all.t1.results.pr,
+  file=paste0("Data/Exogeneity_Results_PSelect",party.selec.switch,
+              "_denom",vote.denom,".RData"))
 ```
 
 
