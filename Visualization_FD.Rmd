@@ -9,63 +9,176 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r }
+
+
+
+### Figures
+
+```{r}
 library(readxl)
 
-results<- read_xlsx("ModelSummaries.xlsx",sheet=2)
-
+results <- read_xlsx("ModelSummaries.xlsx",sheet=2)
 
 ```
 
 
-
 ```{r}
+# Define color palette
+pacman::p_load(RColorBrewer)
 
-pdf(file="graphics.pdf",
-    width=12,
-    height=9,
-    pointsize = 13)
-par(mfrow=c(2,2))
+party.colors <- #brewer.pal(9, "Set2")
+                #c("#1E366F","#6D1E1E", "#6F6D1E", "#2B2B2B", "#B43104","#B5A200", "#993366","#3E6F2D", "#005F6B")
+                c("#1D406E","#6E1D1D", "#6F6D1D", "#2B2B2B", "#B43004","#B59F00", "#9F3A62","#3E6E2C", "#005F6A")
+
+# Add LaTeX font
+library(extrafont)
+loadfonts()
+
 
 for (i.vote.d in 1:2){
   for (i.vote.i in 1:2){
 
-    data.tv <- results[results$vote_d==i.vote.d & 
-                         results$vote_i==i.vote.i & 
-                         !is.na(results$vote_i),]
+    # Filter data by voting scenario
+    data.tv <- as.data.frame(results[results$vote_d==i.vote.d & results$vote_i==i.vote.i & !is.na(results$vote_i),])
+    rownames(data.tv) <- data.tv$Party
     
+    # Calculate estimate, standard error, and confidence intervals
     p.estimate <- as.numeric(data.tv$Estimate)
-    se <- as.numeric(data.tv$SE)
-    
+    se <- as.numeric(data.tv$SE)                      # not the robust SE!!!
     lower.b <- p.estimate - 1.96* se
     upper.b <- p.estimate + 1.96* se
     
+    # Set y-axis range based on confidence intervals
     y.range <- range(c(lower.b,upper.b))
     
-    if (i.vote.d==1 & i.vote.i==1) title <- "DK auf Erststimme"
-    if (i.vote.d==1 & i.vote.i==2) title <- "PL auf Erststimme"
-    if (i.vote.d==2 & i.vote.i==1) title <- "DK auf Zweitstimme"
-    if (i.vote.d==2 & i.vote.i==2) title <- "PL auf Zweitstimme"
+    # Combine data into one data frame for visualization
+    data.2 <- as.data.frame(cbind(p.estimate, se, lower.b, upper.b))
+    rownames(data.2) <- data.tv$Party
+    data.vis <- cbind(data.tv, data.2)
     
+    # Set title based on voting scenario
+    if (i.vote.d==1 & i.vote.i==1) title <- "Direktkandidatur auf Erststimmenergebnis"
+    if (i.vote.d==1 & i.vote.i==2) title <- "Listenkandidatur auf Erststimmenergebnis"
+    if (i.vote.d==2 & i.vote.i==1) title <- "Direktkandidatur auf Zweitstimmenergebnis"
+    if (i.vote.d==2 & i.vote.i==2) title <- "Listenkandidatur auf Zweitstimmenergebnis"
     
-    plot(p.estimate,axes=F,
-         xlab="Parties included",ylab="Estimates",
-         ylim=y.range,
-         main=title)
-    for (i.party in 1:length(p.estimate)){
-      lines(c(i.party,i.party),# x-coordinate
-          c(lower.b[i.party],upper.b[i.party]))
-    }
-    axis(1,at=c(1:11),data.tv$Party,cex.axis=0.6)
-    axis(2)
+    # Create PDF file for the current voting scenario
+    pdf(file=paste0(title,".pdf"),
+        width=12,
+        height=9,
+        pointsize = 13,
+        family = "CM Roman")
+    
+    # Plot with colors and labels
+    plot(p.estimate, axes=F,
+    xlab="Spitzenkandidatur", ylab="Unterschied im Stimmenanteil",
+    ylim=y.range,
+    col=party.colors, lwd = 1.5)
 
+    # Add vertical lines at each data point
+    for (i.party in 1:length(p.estimate)){
+    lines(c(i.party,i.party),
+          c(lower.b[i.party],upper.b[i.party]),
+            col=party.colors[i.party], lwd=1.5)
+    points(i.party, p.estimate[i.party], col = "black", pch = 21)
+}
+
+    # Depending on voting scenario, manually add a horizontal help lines
+    # abline(h = 0, lty = 1)          # for all (optional)
+    # abline(h = 0.002, lty = 2)      # "LK auf 1"
+    # abline(h = 0.0025, lty = 2)     # "DK auf 2"
+    # abline(h = 0.004, lty = 2)      # "LK auf 1"
+     abline(h = 0.005, lty = 2)      # "DK auf 2" 
+                                      # "LK auf 2"
+    # abline(h = 0.006, lty = 2)      # "LK auf 1"
+     abline(h = 0.0075, lty = 2)     # "DK auf 2" 
+                                      # "LK auf 2"
+     abline(h = 0.01, lty = 2)       # "DK auf 1"
+                                      # "LK auf 2"
+    # abline(h = 0.015, lty = 2)      # "DK auf 1"
+     abline(h = 0.0175, lty = 2)     # "LK auf 2"
+     abline(h = 0.02, lty = 2)       # "DK auf 1" 
+                                      # "LK auf 2"
+    # abline(h = 0.012, lty = 2)      # "LK auf 1" 
+    
+    # Add x-axis and y-axis labels
+    axis(1, at=c(1:9), data.tv$Party, cex.axis=0.7)
+    axis(2)
+    
+    # Add a frame
+    box()
+
+    dev.off() # close the current PDF file
+    #embed_fonts(paste0(title,".pdf"), outfile=paste0(title,".pdf"))
+
+    
+ }
+}
+```
+
+
+
+
+```{r}
+# Define color palette
+pacman::p_load(tidyverse, readxl, lubridate, RColorBrewer, ggthemes)
+
+# Set color palette
+party.colors <- c("#1D406E","#6E1D1D", "#6F6D1D", "#2B2B2B", "#B43004","#B59F00", "#9F3A62","#3E6E2C", "#005F6A")
+
+# Set theme
+theme_set(theme_light(base_size = 16))
+
+# Loop through voting scenarios
+for (i.vote.d in 1:2){
+  for (i.vote.i in 1:2){
+    
+    # Filter data by voting scenario
+    data.tv <- as.data.frame(results[results$vote_d==i.vote.d & results$vote_i==i.vote.i & !is.na(results$vote_i),])
+    rownames(data.tv) <- data.tv$Party
+    
+    # Calculate estimate, standard error, and confidence intervals
+    p.estimate <- as.numeric(data.tv$Estimate)
+    se <- as.numeric(data.tv$SE)                      # not the robust SE!!!
+    lower.b <- p.estimate - 1.96* se
+    upper.b <- p.estimate + 1.96* se
+    
+    # Set y-axis range based on confidence intervals
+    y.range <- range(c(lower.b,upper.b))
+    
+    # Combine data into one data frame for visualization
+    data.2 <- as.data.frame(cbind(p.estimate, se, lower.b, upper.b))
+    rownames(data.2) <- data.tv$Party
+    data.vis <- cbind(data.tv, data.2)
+    #data.vis <- as.numeric(as.character(data.vis$Party))
+    
+    # Set title based on voting scenario
+    if (i.vote.d==1 & i.vote.i==1) title <- "Direktkandidatur auf Erststimmenergebnis"
+    if (i.vote.d==1 & i.vote.i==2) title <- "Listenkandidatur auf Erststimmenergebnis"
+    if (i.vote.d==2 & i.vote.i==1) title <- "Direktkandidatur auf Zweitstimmenergebnis"
+    if (i.vote.d==2 & i.vote.i==2) title <- "Listenkandidatur auf Zweitstimmenergebnis"
+    
+    # Create plot
+   ggplot(data.vis, aes(x = Party, y = Estimate)) +
+  geom_linerange(aes(ymin = lower.b, ymax = upper.b, color = Party), size = 1.5) +
+  geom_point(size = 4, shape = 21, fill = "white") +
+  scale_color_manual(values = party.colors) +
+  labs(x = "Spitzenkandidatur", y = "Unterschied im Stimmenanteil", title = title) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.x = element_blank(),
+        panel.grid.major.y = element_line(colour = "#DDDDDD"),
+        legend.position = "none",
+        plot.title = element_text(size = 20, face = "bold", hjust = 0.5),
+        plot.margin = margin(1, 1, 1, 1, "cm"))
+    
+    # Save plot to PDF file
+    ggsave(paste0(title,".pdf"), width = 12, height = 9)
+    
   }
 }
 
-dev.off()
-
-
 ```
+
 
 
 
