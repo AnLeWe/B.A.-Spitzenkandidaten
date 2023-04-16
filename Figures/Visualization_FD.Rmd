@@ -58,9 +58,9 @@ for (i.vote.d in 1:2){
     
     # Set title based on voting scenario
     if (i.vote.d==1 & i.vote.i==1) title <- "Direktkandidatur auf Erststimmenergebnis"
-    if (i.vote.d==1 & i.vote.i==2) title <- "Listenpräsenz auf Erststimmenergebnis"
+    if (i.vote.d==1 & i.vote.i==2) title <- "Listenkandidatur auf Erststimmenergebnis"
     if (i.vote.d==2 & i.vote.i==1) title <- "Direktkandidatur auf Zweitstimmenergebnis"
-    if (i.vote.d==2 & i.vote.i==2) title <- "Listenpräsenz auf Zweitstimmenergebnis"
+    if (i.vote.d==2 & i.vote.i==2) title <- "Listenkandidatur auf Zweitstimmenergebnis"
     
     # Create PDF file for the current voting scenario
     pdf(file=paste0(title,".pdf"),
@@ -86,21 +86,21 @@ for (i.vote.d in 1:2){
 
     # Depending on voting scenario, manually add horizontal help lines
     # abline(h = 0, lty = 1)          # for all (optional)
-    # abline(h = 0.002, lty = 2)      # "LP auf 1"
+    # abline(h = 0.002, lty = 2)      # "LK auf 1"
     # abline(h = 0.0025, lty = 2)     # "DK auf 2"
-    # abline(h = 0.004, lty = 2)      # "LP auf 1"
-    # abline(h = 0.005, lty = 2)      # "DK auf 2" 
-                                      # "LP auf 2"
-    # abline(h = 0.006, lty = 2)      # "LP auf 1"
-    # abline(h = 0.0075, lty = 2)     # "DK auf 2" 
-                                      # "LP auf 2"
+    # abline(h = 0.004, lty = 2)      # "LK auf 1"
+     abline(h = 0.005, lty = 2)      # "DK auf 2" 
+                                      # "LK auf 2"
+    # abline(h = 0.006, lty = 2)      # "LK auf 1"
+     abline(h = 0.0075, lty = 2)     # "DK auf 2" 
+                                      # "LK auf 2"
      abline(h = 0.01, lty = 2)       # "DK auf 1"
-                                      # "LP auf 2"
-     abline(h = 0.015, lty = 2)      # "DK auf 1"
-    # abline(h = 0.0175, lty = 2)     # "LP auf 2"
+                                      # "LK auf 2"
+    # abline(h = 0.015, lty = 2)      # "DK auf 1"
+     abline(h = 0.0175, lty = 2)     # "LK auf 2"
      abline(h = 0.02, lty = 2)       # "DK auf 1" 
-                                      # "LP auf 2"
-    # abline(h = 0.012, lty = 2)      # "LP auf 1" 
+                                      # "LK auf 2"
+    # abline(h = 0.012, lty = 2)      # "LK auf 1" 
     
     # Add x-axis and y-axis labels
     axis(1, at=c(1:9), data.tv$Party, cex.axis=0.7)
@@ -141,7 +141,7 @@ y.range <- range(c(lower.b,upper.b))
 party.colors <- c("#1D406E","#1D406E","#6E1D1D","#6E1D1D","#6F6D1D","#6F6D1D")
 
 # pdf
-pdf(file= "H3a_graphix.pdf",
+pdf(file= "Ha_graphix.pdf",
         width=12,
         height=9,
         pointsize = 13,
@@ -200,7 +200,7 @@ y.range <- range(c(lower.b,upper.b))
 party.colors <- c("#1D406E","#1D406E","#6E1D1D","#6E1D1D","#6F6D1D","#6F6D1D")
 
 # pdf
-pdf(file= "H3b_graphix.pdf",
+pdf(file= "Hb_graphix.pdf",
         width=12,
         height=9,
         pointsize = 13,
