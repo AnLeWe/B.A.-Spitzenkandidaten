@@ -121,22 +121,22 @@ stargazer(lm.pr, lm.pr.cs, lm.pr.aflg,
 
 ```{r}
 load("Data/Exogeneity_Results_PSelect1_denom1.RData")
-lm.t1.pr <- all.t1.results.pr[[1]]
-se.t1.pr <- all.t1.results.pr[[5]]
-lm.t1.smd <- all.t1.results.smd[[1]]
-se.t1.smd <- all.t1.results.smd[[5]]
+lm.pr <- all.results.t1.pr[[1]]
+se.pr <- all.results.t1.pr[[5]]
+lm.smd <- all.results.t1.smd[[1]]
+se.smd <- all.results.t1.smd[[5]]
 
-load("Data/Estimation_Results_PSelect2_denom1.RData")
-lm.t1.pr.cs <- all.t1.results.pr[[1]]
-se.t1.pr.cs <- all.t1.results.pr[[5]]
-lm.t1.smd.cs <- all.t1.results.smd[[1]]
-se.t1.smd.cs <- all.t1.results.smd[[5]]
+load("Data/Exogeneity_Results_PSelect2_denom1.RData")
+lm.pr.cs <- all.results.t1.pr[[1]]
+se.pr.cs <- all.results.t1.pr[[5]]
+lm.smd.cs <- all.results.t1.smd[[1]]
+se.smd.cs <- all.results.t1.smd[[5]]
 
-load("Data/Estimation_Results_PSelect3_denom1.RData")
-lm.t1.pr.aflg <- all.t1.results.pr[[1]]
-se.t1.pr.aflg <- all.t1.results.pr[[5]]
-lm.t1.smd.aflg <- all.t1.results.smd[[1]]
-se.t1.smd.aflg <- all.t1.results.smd[[5]]
+load("Data/Exogeneity_Results_PSelect3_denom1.RData")
+lm.pr.aflg <- all.results.t1.pr[[1]]
+se.pr.aflg <- all.results.t1.pr[[5]]
+lm.smd.aflg <- all.results.t1.smd[[1]]
+se.smd.aflg <- all.results.t1.smd[[5]]
 ```
 
 
@@ -144,40 +144,23 @@ se.t1.smd.aflg <- all.t1.results.smd[[5]]
 ```{r}
 ## DV: Erststimme
 print(c("DV: Erststimme"))
-stargazer(lm.t1.smd, lm.t1.smd.cs, lm.t1.smd.aflg,
-          title = "Test auf Exogenität bei abhängiger Variable Erststimmenanteile nach Wahlberechtigten",
-          #dep.var.labels = "Unterschied im Erststimmenanteil",
-          se = list(se.t1.smd, se.t1.smd.cs, se.t1.smd.aflg),
+stargazer(lm.smd, lm.smd.cs, lm.smd.aflg,
+          title = "Test auf Exogenität bei abhängiger Variable Erststimmenanteil",
+          dep.var.labels = "Unterschied im Erststimmenanteil",
+          se = list(se.smd, se.smd.cs, se.smd.aflg),
           column.labels = c("Alle Parteien", "CDU/CSU und SPD", "Kleinere Parteien"),
           model.names = TRUE,
-          model.numbers = FALSE,
+          model.numbers = TRUE,
           align = TRUE,
           font.size = "scriptsize",
           no.space = TRUE,
           #omit.stat = c("f","adj.rsq"),
-          omit = c("as.factor(year)2:as.factor(party)2", "as.factor(year)3:as.factor(party)2",    
-                   "as.factor(year)4:as.factor(party)2",
-                   "as.factor(year)2:as.factor(party)3", "as.factor(year)3:as.factor(party)3", 
-                   "as.factor(year)4:as.factor(party)3",
-                   "as.factor(year)2:as.factor(party)4", "as.factor(year)3:as.factor(party)4", 
-                   "as.factor(year)4:as.factor(party)4",
-                   "as.factor(year)2:as.factor(party)5", "as.factor(year)3:as.factor(party)5", 
-                   "as.factor(year)4:as.factor(party)5",
-                   "as.factor(year)2:as.factor(party)6", "as.factor(year)3:as.factor(party)6 ", 
-                   "as.factor(year)4:as.factor(party)6"),
-          #covariate.labels = c("Direktkandidatur",
-                              # "Direktkdt. Folgejahr",
-                              # "Listenplatzierung",
-                              # "Listenplz. Folgejahr",
-                              # "2009", "2013", "2017", "2021", 
-                             #  "CDU", "SPD", "FDP", "Linke", "Grüne", 
-                              # "2009xCDU", "2013xCDU", "2017xCDU", "2021xCDU",
-                              # "2009xSPD", "2013xSPD", "2017xSPD", "2021xSPD",
-                              # "2009xFDP", "2013xFDP", "2017xFDP", "2021xFDP",
-                              # "2009xLinke", "2013xLinke", "2017xLinke", "2021xLinke",
-                              # "2009xGrüne", "2013xGrüne", "2017xGrüne", "2021xGrüne",
-                              # "Konstante"
-                             # ),
+          omit = c(6:51),
+          covariate.labels = c("Direktkandidatur",
+                               "Direktkdt. Folgejahr",
+                               "Listenpräsenz",
+                               "Listenprz. Folgejahr",
+                               "Konstante"),
           notes.label = "Anmerkung:",
           star.cutoffs = c(0.05,0.01,0.001),
           notes.align = "l",
@@ -189,40 +172,23 @@ stargazer(lm.t1.smd, lm.t1.smd.cs, lm.t1.smd.aflg,
 
 ## DV: Zweitstimme
 print(c("DV: Zweitstimme"))
-stargazer(lm.t1.pr, lm.t1.pr.cs, lm.t1.pr.aflg,
-          title = "Test auf Exogenität bei abhängiger Variable Zweitstimmenanteile nach Wahlberechtigten",
-          #dep.var.labels = "Abhängige Variable: Unterschied im Zweitstimmenanteil",
-          se = list(se.t1.pr, se.t1.pr.cs, se.t1.pr.aflg),
+stargazer(lm.pr, lm.pr.cs, lm.pr.aflg,
+          title = "Test auf Exogenität bei abhängiger Variable Zweitstimmenanteil",
+          dep.var.labels = "Unterschied im Zweitstimmenanteil",
+          se = list(se.pr, se.pr.cs, se.pr.aflg),
           column.labels = c("Alle Parteien", "CDU/CSU und SPD", "Kleinere Parteien"),
           model.names = TRUE,
-          model.numbers = FALSE,
+          model.numbers = TRUE,
           align = TRUE,
           font.size = "scriptsize",
           no.space = TRUE,
           #omit.stat = c("f","adj.rsq"),
-          omit = c("as.factor(year)2:as.factor(party)2", "as.factor(year)3:as.factor(party)2", 
-                   "as.factor(year)4:as.factor(party)2",
-                   "as.factor(year)2:as.factor(party)3", "as.factor(year)3:as.factor(party)3", 
-                   "as.factor(year)4:as.factor(party)3",
-                   "as.factor(year)2:as.factor(party)4", "as.factor(year)3:as.factor(party)4", 
-                   "as.factor(year)4:as.factor(party)4",
-                   "as.factor(year)2:as.factor(party)5", "as.factor(year)3:as.factor(party)5", 
-                   "as.factor(year)4:as.factor(party)5",
-                   "as.factor(year)2:as.factor(party)6", "as.factor(year)3:as.factor(party)6 ", 
-                   "as.factor(year)4:as.factor(party)6"),
-          #covariate.labels = c("Listenplatzierung",
-                              # "Listenplz. Folgejahr",
-                              # "Direktkandidatur",
-                              # "Direktkdt. Folgejahr",
-                              # "2009", "2013", "2017", 
-                              # "CDU", "SPD", "FDP", "Linke", "Grüne", 
-                              # "2009xCDU", "2013xCDU", "2017xCDU", "2021xCDU",
-                              # "2009xSPD", "2013xSPD", "2017xSPD", "2021xSPD",
-                              # "2009xFDP", "2013xFDP", "2017xFDP", "2021xFDP",
-                              # "2009xLinke", "2013xLinke", "2017xLinke", "2021xLinke",
-                              # "2009xGrüne", "2013xGrüne", "2017xGrüne", "2021xGrüne",
-                              # "Konstante"
-                              #),
+          omit = c(6:51),
+          covariate.labels = c("Listenpräsenz",
+                                "Listenprz. Folgejahr",
+                                "Direktkandidatur",
+                                "Direktkdt. Folgejahr",
+                                 "Konstante"),
           notes.label = "Anmerkung:",
           star.cutoffs = c(0.05,0.01,0.001),
           notes.align = "l",
