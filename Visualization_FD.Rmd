@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(readxl)
 
-results <- read_xlsx("Data/ModelSummaries.xlsx",sheet=2)
+results <- read_xlsx("Data/ModelSummaries.xlsx",sheet=3)
 
 ```
 
@@ -94,9 +94,9 @@ for (i.vote.d in 1:2){
     # abline(h = 0.006, lty = 2)      # "LP auf 1"
     # abline(h = 0.0075, lty = 2)     # "DK auf 2" 
                                       # "LP auf 2"
-     abline(h = 0.01, lty = 2)       # "DK auf 1"
+     #abline(h = 0.01, lty = 2)       # "DK auf 1"
                                       # "LP auf 2"
-     abline(h = 0.015, lty = 2)      # "DK auf 1"
+    # abline(h = 0.015, lty = 2)      # "DK auf 1"
     # abline(h = 0.0175, lty = 2)     # "LP auf 2"
      abline(h = 0.02, lty = 2)       # "DK auf 1" 
                                       # "LP auf 2"
@@ -123,7 +123,6 @@ for (i.vote.d in 1:2){
 
 
 ```{r}
-
 # Create data
 dat.Ha <- as.data.frame(rbind(data.vis.H1a[1,23], data.vis.H2a[1,23], data.vis.H1a[2,23], data.vis.H2a[2,23],data.vis.H1a[3,23], data.vis.H2a[3,23]))
 names(dat.Ha) <- "p.estimate"
@@ -163,13 +162,13 @@ plot(p.estimate, axes=F,
 }
 
 # Depending on voting scenario, manually add horizontal help lines
-  abline(h = 0, lty = 1)
-  abline(h = 0.0038, lty = 2)
-  abline(h = 0.0070, lty = 2)
-  abline(h = 0.0139, lty = 2)
-  abline(h = 0.0145, lty = 2)
-  abline(h = 0.0179, lty = 2)
-  abline(h = 0.0186, lty = 2)
+  #abline(h = 0, lty = 1)
+  #abline(h = 0.0038, lty = 2)
+  #abline(h = 0.0070, lty = 2)
+  #abline(h = 0.0139, lty = 2)
+  #abline(h = 0.0145, lty = 2)
+  #abline(h = 0.0179, lty = 2)
+  #abline(h = 0.0186, lty = 2)
      
 # Add x-axis and y-axis labels
   axis(1, at=c(1:6), dat.Ha$party, cex.axis=0.7)
@@ -240,5 +239,6 @@ plot(p.estimate, axes=F,
     dev.off() # close the current PDF file
 
 ```
+
 
 
