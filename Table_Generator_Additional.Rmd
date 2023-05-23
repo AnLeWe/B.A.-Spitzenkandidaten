@@ -1,0 +1,598 @@
+---
+title: "Table_Generator"
+author: "Anna Werner"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### FD Analysis without Incumbency Variables, Eligibles
+
+```{r }
+library(stargazer)
+
+load("Data/Estimation_Results_PSelect1_denom1.RData")
+lm.pr <- all.results.pr[[1]]
+se.pr <- all.results.pr[[5]]
+lm.smd <- all.results.smd[[1]]
+se.smd <- all.results.smd[[5]]
+
+load("Data/Estimation_Results_PSelect2_denom1.RData")
+lm.pr.cs <- all.results.pr[[1]]
+se.pr.cs <- all.results.pr[[5]]
+lm.smd.cs <- all.results.smd[[1]]
+se.smd.cs <- all.results.smd[[5]]
+
+load("Data/Estimation_Results_PSelect3_denom1.RData")
+lm.pr.aflg <- all.results.pr[[1]]
+se.pr.aflg <- all.results.pr[[5]]
+lm.smd.aflg <- all.results.smd[[1]]
+se.smd.aflg <- all.results.smd[[5]]
+
+```
+
+```{r}
+## DV: Erststimme
+print(c("DV: Erststimme"))
+stargazer(lm.smd, lm.smd.cs, lm.smd.aflg,
+          title = "Direktkandidatur und Listenplatzierung auf Erststimmenergebnis",
+          #dep.var.labels = "Unterschied im Erststimmenanteil",
+          se = list(se.smd, se.smd.cs, se.smd.aflg),
+          column.labels = c("Alle Parteien", "CDU/CSU und SPD", "Kleinere Parteien"),
+          model.names = TRUE,
+          model.numbers = TRUE,
+          align = TRUE,
+          #single.row=TRUE,
+          font.size = "scriptsize",
+          no.space = TRUE,
+          #omit.stat = c("f","adj.rsq"),
+          omit = c("year2009:partyCDU", "year2013:partyCDU", "year2017:partyCDU", 
+                   "year2021:partyCDU", "year2009:partySPD", "year2013:partySPD", 
+                   "year2017:partySPD", "year2021:partySPD", "year2009:partyFDP", 
+                   "year2013:partyFDP", "year2017:partyFDP", "year2021:partyFDP", 
+                   "year2009:partyLIN", "year2013:partyLIN", "year2017:partyLIN", 
+                   "year2021:partyLIN", "year2009:partyGRU", "year2013:partyGRU", 
+                   "year2017:partyGRU", "year2021:partyGRU"),
+          covariate.labels = c("Direktkandidatur",
+                               "Listenplatzierung", 
+                               "2009", "2013", "2017", "2021", 
+                               "CDU", "SPD", "FDP", "Linke", "Grüne", 
+                              # "2009xCDU", "2013xCDU", "2017xCDU", "2021xCDU",
+                              # "2009xSPD", "2013xSPD", "2017xSPD", "2021xSPD",
+                              # "2009xFDP", "2013xFDP", "2017xFDP", "2021xFDP",
+                              # "2009xLinke", "2013xLinke", "2017xLinke", "2021xLinke",
+                              # "2009xGrüne", "2013xGrüne", "2017xGrüne", "2021xGrüne",
+                               "Konstante"
+                              ),
+          #ci = TRUE,
+          #notes.label = "Anmerkung",
+          star.cutoffs = c(0.05,0.01,0.001),
+          notes.align = "l",
+          notes = "Hier werden Anmerkungen stehen"#,
+          #style = "apsr",
+          #type = "html",
+          #out = c("Table_1.html")
+          )
+
+## DV: Zweitstimme
+print(c("DV: Zweitstimme"))
+stargazer(lm.pr, lm.pr.cs, lm.pr.aflg,
+          title = "Listenplatzierung und Direktkandidatur auf Zweitstimmenergebnis",
+          #dep.var.labels = "Abhängige Variable: Unterschied im Zweitstimmenanteil",
+          se = list(se.pr, se.pr.cs, se.pr.aflg),
+          column.labels = c("Alle Parteien", "CDU/CSU und SPD", "Kleinere Parteien"),
+          model.names = TRUE,
+          model.numbers = TRUE,
+          align = TRUE,
+          #single.row=TRUE,
+          font.size = "scriptsize",
+          no.space = TRUE,
+          #omit.stat = c("f","adj.rsq"),
+          omit = c(12:31),
+            #c("year2009:partyCDU" : "year2021:partyGRU"),
+          covariate.labels = c("Listenplatzierung",
+                               "Direktkandidatur", 
+                               "2009", "2013", "2017", "2021", 
+                               "CDU", "SPD", "FDP", "Linke", "Grüne", 
+                              # "2009xCDU", "2013xCDU", "2017xCDU", "2021xCDU",
+                              # "2009xSPD", "2013xSPD", "2017xSPD", "2021xSPD",
+                              # "2009xFDP", "2013xFDP", "2017xFDP", "2021xFDP",
+                              # "2009xLinke", "2013xLinke", "2017xLinke", "2021xLinke",
+                              # "2009xGrüne", "2013xGrüne", "2017xGrüne", "2021xGrüne",
+                               "Konstante"
+                              ),
+          #ci = TRUE,
+          notes.label = "Anmerkung:",
+          star.cutoffs = c(0.05,0.01,0.001),
+          notes.align = "l",
+          notes = "hier werden Anmerkungen stehen",
+          style = "apsr",
+          type = "html",
+          out = c("Table_2.html")
+          )
+```
+
+
+
+### Regression Tables Appendix
+
+
+### Robustness Check - Analysis with Incumbency Variables, Eligibles
+
+```{r }
+library(stargazer)
+
+load("Data/Estimation_Results_Incumb_PSelect1_denom1.RData")
+lm.in.pr <- all.results.pr[[1]]
+in. <- all.results.pr[[5]]
+lm.in.smd <- all.results.smd[[1]]
+se.in.smd <- all.results.smd[[5]]
+
+load("Data/Estimation_Results_Incumb_PSelect2_denom1.RData")
+lm.in.pr.cs <- all.results.pr[[1]]
+se.in.pr.cs <- all.results.pr[[5]]
+lm.in.smd.cs <- all.results.smd[[1]]
+se.in.smd.cs <- all.results.smd[[5]]
+
+load("Data/Estimation_Results_Incumb_PSelect3_denom1.RData")
+lm.in.pr.aflg <- all.results.pr[[1]]
+se.in.pr.aflg <- all.results.pr[[5]]
+lm.in.smd.aflg <- all.results.smd[[1]]
+se.in.smd.aflg <- all.results.smd[[5]]
+
+```
+
+```{r}
+## DV: Erststimme
+print(c("DV: Erststimme"))
+stargazer(lm.smd, lm.smd.cs, lm.smd.aflg,
+          title = "Direktkandidatur, gestaffelte Direktkandidatur und Listenplatzierung auf Erststimmenergebnis",
+          #dep.var.labels = "Unterschied im Erststimmenanteil",
+          se = list(se.smd, se.smd.cs, se.smd.aflg),
+          column.labels = c("Alle Parteien", "CDU/CSU und SPD", "Kleinere Parteien"),
+          model.names = TRUE,
+          model.numbers = TRUE,
+          align = TRUE,
+          #single.row=TRUE,
+          font.size = "scriptsize",
+          no.space = TRUE,
+          #omit.stat = c("f","adj.rsq"),
+          omit = c("year2009:partyCDU", "year2013:partyCDU", "year2017:partyCDU", 
+                   "year2021:partyCDU", "year2009:partySPD", "year2013:partySPD", 
+                   "year2017:partySPD", "year2021:partySPD", "year2009:partyFDP", 
+                   "year2013:partyFDP", "year2017:partyFDP", "year2021:partyFDP", 
+                   "year2009:partyLIN", "year2013:partyLIN", "year2017:partyLIN", 
+                   "year2021:partyLIN", "year2009:partyGRU", "year2013:partyGRU", 
+                   "year2017:partyGRU", "year2021:partyGRU"),
+          covariate.labels = c("Direktkandidatur",
+                               "Direktkandidatur gestaffelt",
+                               "Listenplatzierung", 
+                               "2009", "2013", "2017", "2021", 
+                               "CDU", "SPD", "FDP", "Linke", "Grüne", 
+                              # "2009xCDU", "2013xCDU", "2017xCDU", "2021xCDU",
+                              # "2009xSPD", "2013xSPD", "2017xSPD", "2021xSPD",
+                              # "2009xFDP", "2013xFDP", "2017xFDP", "2021xFDP",
+                              # "2009xLinke", "2013xLinke", "2017xLinke", "2021xLinke",
+                              # "2009xGrüne", "2013xGrüne", "2017xGrüne", "2021xGrüne",
+                               "Konstante"
+                              ),
+          #ci = TRUE,
+          #notes.label = "Anmerkung",
+          star.cutoffs = c(0.05,0.01,0.001),
+          notes.align = "l",
+          notes = "Hier werden Anmerkungen stehen"#,
+          #style = "apsr",
+          #type = "html",
+          #out = c("Table_Incumb_1.html")
+          )
+
+## DV: Zweitstimme
+print(c("DV: Zweitstimme"))
+stargazer(lm.pr, lm.pr.cs, lm.pr.aflg,
+          title = "Listenplatzierung, gestaffelte Listenplatzierung und Direktkandidatur auf Zweitstimmenergebnis",
+          #dep.var.labels = "Abhängige Variable: Unterschied im Zweitstimmenanteil",
+          se = list(se.pr, se.pr.cs, se.pr.aflg),
+          column.labels = c("Alle Parteien", "CDU/CSU und SPD", "Kleinere Parteien"),
+          model.names = TRUE,
+          model.numbers = TRUE,
+          align = TRUE,
+          #single.row=TRUE,
+          font.size = "scriptsize",
+          no.space = TRUE,
+          #omit.stat = c("f","adj.rsq"),
+          omit = c("year2009:partyCDU", "year2013:partyCDU", "year2017:partyCDU", 
+                   "year2021:partyCDU", "year2009:partySPD", "year2013:partySPD", 
+                   "year2017:partySPD", "year2021:partySPD", "year2009:partyFDP", 
+                   "year2013:partyFDP", "year2017:partyFDP", "year2021:partyFDP", 
+                   "year2009:partyLIN", "year2013:partyLIN", "year2017:partyLIN", 
+                   "year2021:partyLIN", "year2009:partyGRU", "year2013:partyGRU", 
+                   "year2017:partyGRU", "year2021:partyGRU"),
+          covariate.labels = c("Listenplatzierung",
+                               "Listenplatzierung gestaffelt",
+                               "Direktkandidatur", 
+                               "2009", "2013", "2017", "2021", 
+                               "CDU", "SPD", "FDP", "Linke", "Grüne", 
+                              # "2009xCDU", "2013xCDU", "2017xCDU", "2021xCDU",
+                              # "2009xSPD", "2013xSPD", "2017xSPD", "2021xSPD",
+                              # "2009xFDP", "2013xFDP", "2017xFDP", "2021xFDP",
+                              # "2009xLinke", "2013xLinke", "2017xLinke", "2021xLinke",
+                              # "2009xGrüne", "2013xGrüne", "2017xGrüne", "2021xGrüne",
+                               "Konstante"
+                              ),
+          #ci = TRUE,
+          notes.label = "Anmerkung:",
+          star.cutoffs = c(0.05,0.01,0.001),
+          notes.align = "l",
+          notes = "ier werden Anmerkungen stehen",
+          style = "apsr",
+          type = "html",
+          out = c("Table_Incumb_2.html")
+          )
+```
+
+
+
+### FD Analysis with Incumbency Variables, Valid Votes
+
+```{r }
+library(stargazer)
+
+load("Data/Estimation_Results_Incumb2_PSelect1_denom3.RData")
+lm.pr <- all.results.pr[[1]]
+se.pr <- all.results.pr[[5]]
+lm.smd <- all.results.smd[[1]]
+se.smd <- all.results.smd[[5]]
+
+load("Data/Estimation_Results_Incumb2_PSelect2_denom3.RData")
+lm.pr.cs <- all.results.pr[[1]]
+se.pr.cs <- all.results.pr[[5]]
+lm.smd.cs <- all.results.smd[[1]]
+se.smd.cs <- all.results.smd[[5]]
+
+load("Data/Estimation_Results_Incumb2_PSelect3_denom3.RData")
+lm.pr.aflg <- all.results.pr[[1]]
+se.pr.aflg <- all.results.pr[[5]]
+lm.smd.aflg <- all.results.smd[[1]]
+se.smd.aflg <- all.results.smd[[5]]
+
+```
+
+```{r}
+## DV: Erststimme
+print(c("DV: Erststimme"))
+stargazer(lm.smd, lm.smd.cs, lm.smd.aflg,
+          title = "Direktkandidatur, gestaffelte Direktkandidatur, Listenpräsenz und gestaffelte Listenpräsenz auf Erststimmenergebnis",
+          #dep.var.labels = "Unterschied im Erststimmenanteil",
+          se = list(se.smd, se.smd.cs, se.smd.aflg),
+          column.labels = c("Alle Parteien", "CDU/CSU und SPD", "Kleinere Parteien"),
+          model.names = TRUE,
+          model.numbers = TRUE,
+          align = TRUE,
+          #single.row=TRUE,
+          font.size = "scriptsize",
+          no.space = TRUE,
+          #omit.stat = c("f","adj.rsq"),
+          #omit =  c(6:33),
+          #covariate.labels = c("Direktkandidatur",
+          #                     "Direktkandidatur gestaffelt",
+          #                     "Listenpräsenz",
+          #                     "Listenpräsenz gestaffelt",
+          #                     "leer",
+          #                     "Konstante"),
+          #ci = TRUE,
+          #notes.label = "Anmerkung",
+          star.cutoffs = c(0.05,0.01,0.001),
+          notes.align = "l",
+          notes = "Hier werden Anmerkungen stehen",
+          style = "apsr",
+          type = "html",
+          out = c("Table_Incumb2_1.html")
+          )
+
+## DV: Zweitstimme
+print(c("DV: Zweitstimme"))
+stargazer(lm.pr, lm.pr.cs, lm.pr.aflg,
+          title = "Listenpräsenz, gestaffelte Listenpräsenz, Direktkandidatur und gestaffelte Direktkandidatur auf Zweitstimmenergebnis",
+          #dep.var.labels = "Abhängige Variable: Unterschied im Zweitstimmenanteil",
+          se = list(se.pr, se.pr.cs, se.pr.aflg),
+          column.labels = c("Alle Parteien", "CDU/CSU und SPD", "Kleinere Parteien"),
+          model.names = TRUE,
+          model.numbers = TRUE,
+          align = TRUE,
+          #single.row=TRUE,
+          font.size = "scriptsize",
+          no.space = TRUE,
+          #omit.stat = c("f","adj.rsq"),
+          #omit =  c(6:33),
+          #covariate.labels = c("Listenpräsenz",
+          #                     "Listenpräsenz gestaffelt",
+          #                     "Direktkandidatur",
+          #                     "Direktkandidatur gestaffelt",
+          #                     "leer",
+          #                     "Konstante"),
+          #ci = TRUE,
+          notes.label = "Anmerkung:",
+          star.cutoffs = c(0.05,0.01,0.001),
+          notes.align = "l",
+          notes = "ier werden Anmerkungen stehen",
+          style = "apsr",
+          type = "html",
+          out = c("Table_Incumb2_2.html")
+          )
+```
+
+
+
+
+
+## Robustness Check - Fixed Effects, Eligibles
+
+```{r}
+load("Data/Estimation_Results_FE_PSelect1_denom1.RData")
+lm.pr <- all.results.pr[[1]]
+se.pr <- all.results.pr[[5]]
+lm.smd <- all.results.smd[[1]]
+se.smd <- all.results.smd[[5]]
+
+load("Data/Estimation_Results_FE_PSelect2_denom1.RData")
+lm.pr.cs <- all.results.pr[[1]]
+se.pr.cs <- all.results.pr[[5]]
+lm.smd.cs <- all.results.smd[[1]]
+se.smd.cs <- all.results.smd[[5]]
+
+load("Data/Estimation_Results_FE_PSelect3_denom1.RData")
+lm.pr.aflg <- all.results.pr[[1]]
+se.pr.aflg <- all.results.pr[[5]]
+lm.smd.aflg <- all.results.smd[[1]]
+se.smd.aflg <- all.results.smd[[5]]
+```
+
+```{r}
+## DV: Erststimme
+print(c("DV: Erststimme"))
+stargazer(lm.smd, lm.smd.cs, lm.smd.aflg,
+          title = "Direktkandidatur, Listenplatzierung und Vorjahresergebnisse auf Erststimmenergebnis",
+          #dep.var.labels = "Unterschied im Erststimmenanteil",
+          se = list(se.smd, se.smd.cs, se.smd.aflg),
+          column.labels = c("Alle Parteien", "CDU/CSU und SPD", "Kleinere Parteien"),
+          model.names = TRUE,
+          model.numbers = TRUE,
+          align = TRUE,
+          font.size = "scriptsize",
+          no.space = TRUE,
+          #omit.stat = c("f","adj.rsq"),
+          keep = c(1:4),
+          covariate.labels = c("Direktkandidatur",
+                               "Listenpräsenz",
+                               "Vorjahresergebnis"
+                               #,"Konstante"
+                               ),
+          #ci = TRUE,
+          #notes.label = "Anmerkung",
+          star.cutoffs = c(0.05,0.01,0.001),
+          notes.align = "l",
+          notes = "Hier werden Anmerkungen stehen"#,
+          #style = "apsr",
+          #type = "html",
+          #out = c("Table_FE2_1.html")
+          )
+
+## DV: Zweitstimme
+print(c("DV: Zweitstimme"))
+stargazer(lm.pr, lm.pr.cs, lm.pr.aflg,
+          title = "Listenpräsenz, Direktkandidatur und Vorjahresergebnisse auf Zweitstimmenergebnis",
+          #dep.var.labels = "Abhängige Variable: Unterschied im Zweitstimmenanteil",
+          se = list(se.pr, se.pr.cs, se.pr.aflg),
+          column.labels = c("Alle Parteien", "CDU/CSU und SPD", "Kleinere Parteien"),
+          model.names = TRUE,
+          model.numbers = TRUE,
+          align = TRUE,
+          font.size = "scriptsize",
+          no.space = TRUE,
+          keep = c(1:4),
+          #omit.stat = c("f","adj.rsq"),
+          covariate.labels = c("Listenpräsenz",
+                               "Direktkandidatur",
+                               "Vorjahresergebnis"
+                               #,"Konstante"
+                               ),
+          notes.label = "Anmerkung:",
+          star.cutoffs = c(0.05,0.01,0.001),
+          notes.align = "l",
+          notes = "Hier werden Anmerkungen stehen"#,
+          #style = "apsr",
+          #type = "html",
+          #out = c("Table_FE2_2.html")
+          )
+```
+
+
+
+## Diagnostics II: Exogeneity of the treatment
+
+
+## Exogeneity without Incumbency Variables, Eligibles
+
+```{r}
+load("Data/Exogeneity_Results_PSelect1_denom1.RData")
+lm.pr <- all.results.t1.pr[[1]]
+se.pr <- all.results.t1.pr[[5]]
+lm.smd <- all.results.t1.smd[[1]]
+se.smd <- all.results.t1.smd[[5]]
+
+load("Data/Exogeneity_Results_PSelect2_denom1.RData")
+lm.pr.cs <- all.results.t1.pr[[1]]
+se.pr.cs <- all.results.t1.pr[[5]]
+lm.smd.cs <- all.results.t1.smd[[1]]
+se.smd.cs <- all.results.t1.smd[[5]]
+
+load("Data/Exogeneity_Results_PSelect3_denom1.RData")
+lm.pr.aflg <- all.results.t1.pr[[1]]
+se.pr.aflg <- all.results.t1.pr[[5]]
+lm.smd.aflg <- all.results.t1.smd[[1]]
+se.smd.aflg <- all.results.t1.smd[[5]]
+```
+
+```{r}
+## DV: Erststimme
+print(c("DV: Erststimme"))
+stargazer(lm.smd, lm.smd.cs, lm.smd.aflg,
+          title = "Test auf Exogenität bei abhängiger Variable Erststimmenanteil",
+          dep.var.labels = "Unterschied im Erststimmenanteil",
+          #se = list(se.smd, se.smd.cs, se.smd.aflg),
+          column.labels = c("Alle Parteien", "CDU/CSU und SPD", "Kleinere Parteien"),
+          model.names = TRUE,
+          model.numbers = TRUE,
+          align = TRUE,
+          font.size = "scriptsize",
+          no.space = TRUE,
+          #omit.stat = c("f","adj.rsq"),
+          omit = c(6:27),
+          covariate.labels = c("Direktkandidatur",
+                               "Direktkdt. Folgejahr",
+                               "Listenpräsenz",
+                               "Listenprz. Folgejahr"
+          #                     ",Konstante"
+                               ),
+          notes.label = "Anmerkung:",
+          star.cutoffs = c(0.05,0.01,0.001),
+          notes.align = "l",
+          notes = "Hier werden Anmerkungen stehen"#,
+          #style = "apsr",
+          #type = "html",
+          #out = c("Exg_table_1.html")
+          )
+
+## DV: Zweitstimme
+print(c("DV: Zweitstimme"))
+stargazer(lm.pr, lm.pr.cs, lm.pr.aflg,
+          title = "Test auf Exogenität bei abhängiger Variable Zweitstimmenanteil",
+          dep.var.labels = "Unterschied im Zweitstimmenanteil",
+          #se = list(se.pr, se.pr.cs, se.pr.aflg),
+          column.labels = c("Alle Parteien", "CDU/CSU und SPD", "Kleinere Parteien"),
+          model.names = TRUE,
+          model.numbers = TRUE,
+          align = TRUE,
+          font.size = "scriptsize",
+          no.space = TRUE,
+          #omit.stat = c("f","adj.rsq"),
+          omit = c(6:27),
+          covariate.labels = c("Listenpräsenz",
+                                "Listenprz. Folgejahr",
+                                "Direktkandidatur",
+                                "Direktkdt. Folgejahr"
+          #                      ",Konstante"
+                                ),
+          notes.label = "Anmerkung:",
+          star.cutoffs = c(0.05,0.01,0.001),
+          notes.align = "l",
+          notes = "Hier werden Anmerkungen stehen"#,
+          #style = "apsr",
+          #type = "html",
+          #out = c("Exg_table_2.html")
+          )
+```
+
+## Exogeneity with Incumbency Variables, Valid Votes
+
+```{r }
+library(stargazer)
+
+load("Data/Exogeneity_Results_Incumb2_PSelect1_denom3.RData")
+lm.pr <- all.results.t1.pr[[1]]
+se.pr <- all.results.t1.pr[[5]]
+lm.smd <- all.results.t1.smd[[1]]
+se.smd <- all.results.t1.smd[[5]]
+
+load("Data/Exogeneity_Results_Incumb2_PSelect2_denom3.RData")
+lm.pr.cs <- all.results.t1.pr[[1]]
+se.pr.cs <- all.results.t1.pr[[5]]
+lm.smd.cs <- all.results.t1.smd[[1]]
+se.smd.cs <- all.results.t1.smd[[5]]
+
+load("Data/Exogeneity_Results_Incumb2_PSelect3_denom3.RData")
+lm.pr.aflg <- all.results.t1.pr[[1]]
+se.pr.aflg <- all.results.t1.pr[[5]]
+lm.smd.aflg <- all.results.t1.smd[[1]]
+se.smd.aflg <- all.results.t1.smd[[5]]
+
+```
+
+```{r}
+## DV: Erststimme
+print(c("DV: Erststimme"))
+stargazer(lm.smd, lm.smd.cs, lm.smd.aflg,
+          title = "Test auf Exogenität für Treatment- und Incumbency-Variablen beim Erststimmenergebnis",
+          #dep.var.labels = "Unterschied im Erststimmenanteil",
+          se = list(se.smd, se.smd.cs, se.smd.aflg),
+          column.labels = c("Alle Parteien", "CDU/CSU und SPD", "Kleinere Parteien"),
+          model.names = TRUE,
+          model.numbers = TRUE,
+          align = TRUE,
+          #single.row=TRUE,
+          font.size = "scriptsize",
+          no.space = TRUE,
+          #omit.stat = c("f","adj.rsq"),
+          omit =  c(10:31),
+          covariate.labels = c("Direktkandidatur",
+                               "Direktkandidatur Folgejahr",
+                               "Direktkandidatur gestaffelt",
+                               "Direktkdt. gestaffelt Folgejahr",
+                               "Listenpräsenz",
+                               "Listenpräsenz Folgejahr",
+                               "Listenpräsenz gestaffelt",
+                               "Listenprz. gestaffelt Folgejahr",
+                               "leer",
+                               "Konstante"),
+          #ci = TRUE,
+          #notes.label = "Anmerkung",
+          star.cutoffs = c(0.05,0.01,0.001),
+          notes.align = "l",
+          notes = "Hier werden Anmerkungen stehen"#,
+          #style = "apsr",
+          #type = "html",
+          #out = c("Table_Exo_Incumb_1.html")
+          )
+
+## DV: Zweitstimme
+print(c("DV: Zweitstimme"))
+stargazer(lm.pr, lm.pr.cs, lm.pr.aflg,
+          title = "Test auf Exogenität für Treatment- und Incumbency-Variablen beim Zweitstimmenergebnis",
+          #dep.var.labels = "Abhängige Variable: Unterschied im Zweitstimmenanteil",
+          se = list(se.pr, se.pr.cs, se.pr.aflg),
+          column.labels = c("Alle Parteien", "CDU/CSU und SPD", "Kleinere Parteien"),
+          model.names = TRUE,
+          model.numbers = TRUE,
+          align = TRUE,
+          #single.row=TRUE,
+          font.size = "scriptsize",
+          no.space = TRUE,
+          #omit.stat = c("f","adj.rsq"),
+          omit =  c(10:31),
+          covariate.labels = c("Listenpräsenz",
+                               "Listenpräsenz Folgejahr",
+                               "Listenpräsenz gestaffelt",
+                               "Listenprz. gestaffelt Folgejahr",
+                               "Direktkandidatur",
+                               "Direktkandidatur Folgejahr",
+                               "Direktkandidatur gestaffelt",
+                               "Direktkdt. gestaffelt Folgejahr",
+                               "leer",
+                               "Konstante"),
+          #ci = TRUE,
+          notes.label = "Anmerkung:",
+          star.cutoffs = c(0.05,0.01,0.001),
+          notes.align = "l",
+          notes = "ier werden Anmerkungen stehen"#,
+          #style = "apsr",
+          #type = "html",
+          #out = c("Table_Exo_Incumb_2.html")
+          )
+```
+
+
+
+

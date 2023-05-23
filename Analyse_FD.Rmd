@@ -165,9 +165,10 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
                   levels=c("CDU","SPD","AFD","FDP","LIN","GRU")) # C S A F L G
   party <- relevel(party,ref="AFD")
   cross.treat <- c(all.treat.dummy.fd[,,c(2,1)[i.smdpr],] )
+  cross.treat.incumb <- c(all.treat.incumb.fd[,,c(2,1)[i.smdpr],] )
 
   
-  lm.dat <- cbind(votes,treat,cross.treat,treat.incumb)
+  lm.dat <- cbind(votes,treat,cross.treat,treat.incumb,cross.treat.incumb)
   lm.dat <- as.data.frame(lm.dat)
   lm.dat$year <- year
   lm.dat$party <- party
@@ -177,8 +178,11 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
   print(c("DV: Erststimme","DV: Zweitstimme")[i.smdpr])
   print(summary(lm.out <- lm(votes~ treat +
-                                  # + treat.incumb                                 # + robustness-check
-                                    cross.treat + year * party, data=lm.dat))) 
+                                    #treat.incumb +                     # control for Incumbency
+                                    cross.treat +
+                                    #cross.treat.incumb +
+                                    year + year:party 
+                                    ,data=lm.dat))) 
   
   print(c("Robust standard error"))
   r.se <- sqrt(diag(vcovHC(lm.out, type = 'HC')))
@@ -198,10 +202,10 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   if (i.smdpr==2) all.results.pr <- all.results
 }
 
-save(all.results.smd,
-     all.results.pr,
-  file=paste0("Data/Estimation_Results_PSelect",party.selec.switch,
-              "_denom",vote.denom,".RData"))
+#save(all.results.smd,
+#     all.results.pr,
+#  file=paste0("Data/Estimation_Results_PSelect",party.selec.switch,
+#             "_denom",vote.denom,".RData"))
 
 ```
 
@@ -271,7 +275,7 @@ Also here, we have to take care about the redistricting.
 
 for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
-  all.t1.results <- vector("list",3) # empty list to store the results
+  all.results.t1 <- vector("list",3) # empty list to store the results
 
   votes.in.array <- all.rel.votes.fd[,,i.smdpr,2:5]
   votes <- c(votes.in.array)
@@ -283,57 +287,71 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
                   levels=c("CDU","SPD","AFD","FDP","LIN","GRU")) # C S A F L G
   party <- relevel(party,ref="AFD")
   cross.treat <- c(all.treat.dummy.fd[,,c(2,1)[i.smdpr],2:5] )
+  cross.treat.incumb <- c(all.treat.incumb.fd[,,c(2,1)[i.smdpr],2:5] )
   
   # treatment at t+1
   treat.t1 <- all.treat.dummy.fd[,,i.smdpr,1:4]
   treat.incumb.t1 <- all.treat.incumb.fd[,,i.smdpr,1:4] 
   cross.treat.t1 <- all.treat.dummy.fd[,,c(2,1)[i.smdpr],1:4] 
+  cross.treat.incumb.t1 <- all.treat.incumb.fd[,,c(2,1)[i.smdpr],1:4]
+  
   # we assign the correct district
   simple.district.idx <- all.wkr.index[,1,1,]
   for (i.btw in 2:5){ # loop over btw2017 to btw2005
     key <- match(simple.district.idx[,i.btw],simple.district.idx[,i.btw-1])
     treat.t1[,,i.btw-1] <- treat.t1[key,,i.btw-1]
+    treat.incumb.t1[,,i.btw-1] <- treat.incumb.t1[key,,i.btw-1]
     cross.treat.t1[,,i.btw-1] <- cross.treat.t1[key,,i.btw-1]
+    cross.treat.incumb.t1[,,i.btw-1] <- cross.treat.incumb.t1[key,,i.btw-1]
   }
   treat.t1 <- c(treat.t1)
   cross.treat.t1 <- c(cross.treat.t1)
+  treat.incumb.t1 <- c(treat.incumb.t1)
+  cross.treat.incumb.t1 <- c(cross.treat.incumb.t1)
 
   lm.dat <- cbind(votes,treat,year,party,
-                  cross.treat,treat.incumb,
-                  treat.t1,cross.treat.t1,treat.incumb.t1)
+                  cross.treat,treat.incumb, cross.treat.incumb,
+                  treat.t1,cross.treat.t1,treat.incumb.t1, cross.treat.incumb.t1)
   lm.dat <- as.data.frame(lm.dat)
   
   ## Model with cross treatment (contamination)
 
   print(c("DV: Erststimme","DV: Zweitstimme")[i.smdpr])
-  print(summary(lm.out <- lm(votes~ treat + treat.t1+
-                                     cross.treat + cross.treat.t1+
-                                     #treat.incumb + treat.incumb.t1 +
-                               as.factor(year) * as.factor(party),
+  print(summary(lm.out <- lm(votes~ treat + treat.t1 +
+                                    #treat.incumb + treat.incumb.t1 +                      # control for Incumbency
+                                    cross.treat + cross.treat.t1 +
+                                    #cross.treat.incumb + cross.treat.incumb.t1 +
+                               as.factor(year) + as.factor(year):as.factor(party),
                              data=lm.dat)))
   
   print(c("Robust standard error"))
   r.se <- sqrt(diag(vcovHC(lm.out, type = 'HC')))
   print(lm.out.robust <- coeftest(lm.out, vcov = vcovHC(lm.out, type = 'HC')))
+  
+  print(c("Treatments Erststimmen","Treatments Zweitstimmen")[i.smdpr])     
+        print(table(treat))
+        print(table(treat.t1))
+        print(table(cross.treat))
+        print(table(cross.treat.t1))
 
 
-  all.t1.results[[1]] <- lm.out
+  all.results.t1[[1]] <- lm.out
 
-  all.t1.results[[2]] <- lm.out.robust
+  all.results.t1[[2]] <- lm.out.robust
   
-  all.t1.results[[3]] <- lm.dat
-  all.t1.results[[4]] <- votes.in.array
+  all.results.t1[[3]] <- lm.dat
+  all.results.t1[[4]] <- votes.in.array
   
-  all.t1.results[[5]] <- r.se
+  all.results.t1[[5]] <- r.se
   
-  if (i.smdpr==1) all.t1.results.smd <- all.t1.results
-  if (i.smdpr==2) all.t1.results.pr <- all.t1.results
+  if (i.smdpr==1) all.results.t1.smd <- all.results.t1
+  if (i.smdpr==2) all.results.t1.pr <- all.results.t1
 }
 
-save(all.t1.results.smd,
-     all.t1.results.pr,
-  file=paste0("Data/Exogeneity_Results_PSelect",party.selec.switch,
-              "_denom",vote.denom,".RData"))
+#save(all.results.t1.smd,
+#     all.results.t1.pr,
+#  file=paste0("Data/Exogeneity_Results_PSelect",party.selec.switch,
+#              "_denom",vote.denom,".RData"))
 ```
 
 
