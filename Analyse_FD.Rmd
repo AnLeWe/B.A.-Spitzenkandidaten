@@ -4,7 +4,7 @@ author: "Anna Werner & Susumu Shikano"
 date: "`r Sys.Date()`"
 output: html_document
 ---
-±
+
 ```{r , include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(stargazer)
@@ -21,7 +21,7 @@ load("Data/analysis_dat.RData")
 ## Switch for party selection
 
 ```{r}
-party.selec.switch <- 3
+party.selec.switch <- 1
 ```
 
 See below what value corresponds to what party selection.
@@ -56,7 +56,13 @@ vote.denom <- 1
 ```
 
 
+all.abs.votes has 5 dimensions:
 
+- 299 districts
+- 6 parties
+- tier: FPTP or PR
+- 6 elections
+- current or last elections
 
 ```{r}
 all.abs.votes <- all.abs.votes[,party.selection,,,]
