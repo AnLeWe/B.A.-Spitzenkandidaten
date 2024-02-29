@@ -21,7 +21,7 @@ load("Data/analysis_dat.RData")
 ## Switch for party selection
 
 ```{r}
-party.selec.switch <- 1
+party.selec.switch <- 0
 ```
 
 See below what value corresponds to what party selection.
@@ -30,6 +30,7 @@ See below what value corresponds to what party selection.
 
 ## Do not select only one party. This won't work!
 
+if (party.selec.switch==0) party.selection <- c(1)        #  turnout
 if (party.selec.switch==1) party.selection <- c(1:6)      # C S A F L G
 if (party.selec.switch==2) party.selection <- c(1:2)      # nur C und S
 if (party.selec.switch==3) party.selection <- c(3:6)      # ohne C und S
@@ -45,13 +46,14 @@ if (party.selec.switch==11) party.selection <- c(1:5)     # ohne G
 
 ## Switch for denominator to compute the vote share
 
-  1: eligible citizens
+  1: eligible citizens (for turnout in analysis, this option has to be selected.)
   2: all voters
-  3: all valid votes
+  3: all valid votes 
 
 ```{r}
 
 vote.denom <- 1
+if (party.selec.switch==0) vote.denom <- 1 
 
 ```
 
@@ -64,10 +66,26 @@ all.abs.votes has 5 dimensions:
 - 6 elections
 - current or last elections
 
+all.treat has 4 dimensions:
+
+- 299 districts
+- 6 parties
+- tier: FPTP or PR
+- 6 elections
+
 ```{r}
-all.abs.votes <- all.abs.votes[,party.selection,,,]
-all.treat     <- all.treat[,party.selection,,]
-all.rel.votes <-  all.abs.votes/all.abs.total[,rep(vote.denom,length(party.selection)),,,] 
+if (party.selec.switch!=0){
+  all.abs.votes <- all.abs.votes[,party.selection,,,]
+  all.treat     <- all.treat[,party.selection,,]
+}else{
+  all.abs.votes <- all.abs.total[,rep(2,length(party.selection)),,,,drop=F] 
+  temp <- apply(all.treat,c(1,3,4),max)
+  all.treat <- array(temp,dim=c(299,1,2,6))    
+}
+
+
+all.rel.votes <-  all.abs.votes/
+  all.abs.total[,rep(vote.denom,length(party.selection)),,,,drop=F] 
 
 ```
 
@@ -80,9 +98,12 @@ We create the first differences:
 
 
 ```{r}
-  all.rel.votes.fd <- all.rel.votes[,,,1:5,1] - all.rel.votes[,,,1:5,2]
-
+  all.rel.votes.fd <- all.rel.votes[,,,1:5,1,drop=F] - all.rel.votes[,,,1:5,2,drop=F]
   # Note that there will be no FD for 2002, therefore we have n(year)=5.
+  if (party.selec.switch==0) {
+    all.rel.votes.fd <- array(all.rel.votes.fd,
+                              dim=dim(all.rel.votes.fd)[1:4])
+    }
 
   hist(all.rel.votes.fd)
 ```
@@ -92,15 +113,16 @@ We create the first differences:
 Treatment leading candidate or not
 
 ```{r}
-
+# Make all values >0 to 1
 all.treat.dummy <- all.treat
 all.treat.dummy[all.treat.dummy>0] <- 1
 
 all.treat.incumb <- ifelse(all.treat==3|all.treat==4,1,0)
 
 table(all.treat.dummy)
+apply(all.treat.dummy,3,table)
 table(all.treat.incumb)
-
+apply(all.treat.incumb,3,table)
 
 all.treat.dummy.fd <- 
 all.treat.incumb.fd <- 
@@ -144,6 +166,7 @@ Party index
 party.index <- all.treat.dummy.fd
 
 party.labels <- c("CDU","SPD","AFD","FDP","LIN","GRU")[party.selection]
+if(party.selec.switch==0) party.labels <- "Turnout"
 for (i.party in 1:length(party.selection)){
   party.index[,i.party,,] <- party.labels[i.party]
 }
@@ -168,7 +191,7 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   year  <- as.factor(c(year.index[,,i.smdpr,] ))
   year <- relevel(year,ref="2005")
   party <- factor(c(party.index[,,i.smdpr,] ),
-                  levels=c("CDU","SPD","AFD","FDP","LIN","GRU")) # C S A F L G
+                  levels=c("CDU","SPD","AFD","FDP","LIN","GRU","Turnout")) # C S A F L G
   party <- relevel(party,ref="AFD")
   cross.treat <- c(all.treat.dummy.fd[,,c(2,1)[i.smdpr],] )
   cross.treat.incumb <- c(all.treat.incumb.fd[,,c(2,1)[i.smdpr],] )
@@ -183,12 +206,21 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   ## Model 
 
   print(c("DV: Erststimme","DV: Zweitstimme")[i.smdpr])
-  print(summary(lm.out <- lm(votes~ treat +
-                                    #treat.incumb +                     # control for Incumbency
+  if (party.selec.switch!=0){
+      print(summary(lm.out <- lm(votes~ treat +
+                                    #treat.incumb + # control for Incumbency
                                     cross.treat +
                                     #cross.treat.incumb +
                                     year + year:party 
                                     ,data=lm.dat))) 
+  }else{
+          print(summary(lm.out <- lm(votes~ treat +
+                                    #treat.incumb + # control for Incumbency
+                                    cross.treat +
+                                    #cross.treat.incumb +
+                                    year 
+                                    ,data=lm.dat))) 
+  }
   
   print(c("Robust standard error"))
   r.se <- sqrt(diag(vcovHC(lm.out, type = 'HC')))
@@ -240,14 +272,21 @@ for (i.smdpr in 1:2){
   
 
 residuals <- residuals(to.be.tested)
-residuals <- array(residuals,dim=dim(temp.depv))
+
+if (party.selec.switch!=0){
+  residuals <- array(residuals,dim=dim(temp.depv))
+}else{
+  residuals <- array(residuals,
+                     dim=c(dim(temp.depv)[1],1,dim(temp.depv)[2]))
+}
+
 
 simple.district.idx <- all.wkr.index[,1,1,]
 
 # stacking residuals at t and t-1
 ## loop from BTW 2021 to 2009
+current.resid <- past.resid <- residuals[,,1:4,drop=F]
 
-current.resid <- past.resid <- residuals[,,1:4]
 for (i.btw in 1:4){
   # create the key to match the current and past districts
   key <- match(simple.district.idx[,i.btw],simple.district.idx[,i.btw+1])
@@ -275,7 +314,6 @@ We are testing by using Wooldridge's test. That is, we include the treatment var
 Also here, we have to take care about the redistricting.
 
 
-
 ```{r}
 
 
@@ -296,10 +334,14 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   cross.treat.incumb <- c(all.treat.incumb.fd[,,c(2,1)[i.smdpr],2:5] )
   
   # treatment at t+1
-  treat.t1 <- all.treat.dummy.fd[,,i.smdpr,1:4]
-  treat.incumb.t1 <- all.treat.incumb.fd[,,i.smdpr,1:4] 
-  cross.treat.t1 <- all.treat.dummy.fd[,,c(2,1)[i.smdpr],1:4] 
-  cross.treat.incumb.t1 <- all.treat.incumb.fd[,,c(2,1)[i.smdpr],1:4]
+  treat.t1 <- all.treat.dummy.fd[,,i.smdpr,1:4,drop=F]
+  treat.t1 <- array(treat.t1,dim=dim(treat.t1)[c(1,2,4)])
+  treat.incumb.t1 <- all.treat.incumb.fd[,,i.smdpr,1:4,drop=F] 
+  treat.incumb.t1 <- array(treat.incumb.t1,dim=dim(treat.incumb.t1)[c(1,2,4)])
+  cross.treat.t1 <- all.treat.dummy.fd[,,c(2,1)[i.smdpr],1:4,drop=F] 
+  cross.treat.t1 <- array(cross.treat.t1,dim=dim(cross.treat.t1)[c(1,2,4)])
+  cross.treat.incumb.t1 <- all.treat.incumb.fd[,,c(2,1)[i.smdpr],1:4,drop=F]
+  cross.treat.incumb.t1 <- array(cross.treat.incumb.t1,dim=dim(cross.treat.incumb.t1)[c(1,2,4)])
   
   # we assign the correct district
   simple.district.idx <- all.wkr.index[,1,1,]
@@ -323,12 +365,23 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   ## Model with cross treatment (contamination)
 
   print(c("DV: Erststimme","DV: Zweitstimme")[i.smdpr])
-  print(summary(lm.out <- lm(votes~ treat + treat.t1 +
-                                    #treat.incumb + treat.incumb.t1 +                      # control for Incumbency
+  if (party.selec.switch!=0){
+      print(summary(lm.out <- lm(votes~ treat + treat.t1 +
+                                    #treat.incumb + 
+                                    #treat.incumb.t1 +# control for Incumbency
                                     cross.treat + cross.treat.t1 +
                                     #cross.treat.incumb + cross.treat.incumb.t1 +
                                as.factor(year) + as.factor(year):as.factor(party),
                              data=lm.dat)))
+  }else{
+      print(summary(lm.out <- lm(votes~ treat + treat.t1 +
+                                    #treat.incumb + 
+                                    #treat.incumb.t1 +# control for Incumbency
+                                    cross.treat + cross.treat.t1 +
+                                    #cross.treat.incumb + cross.treat.incumb.t1 +
+                               as.factor(year) + as.factor(year),
+                             data=lm.dat)))
+  }
   
   print(c("Robust standard error"))
   r.se <- sqrt(diag(vcovHC(lm.out, type = 'HC')))
