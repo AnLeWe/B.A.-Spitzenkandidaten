@@ -21,7 +21,7 @@ load("Data/analysis_dat.RData")
 ## Switch for party selection
 
 ```{r}
-party.selec.switch <- 0
+party.selec.switch <- 3
 ```
 
 See below what value corresponds to what party selection.
@@ -100,10 +100,8 @@ We create the first differences:
 ```{r}
   all.rel.votes.fd <- all.rel.votes[,,,1:5,1,drop=F] - all.rel.votes[,,,1:5,2,drop=F]
   # Note that there will be no FD for 2002, therefore we have n(year)=5.
-  if (party.selec.switch==0) {
     all.rel.votes.fd <- array(all.rel.votes.fd,
                               dim=dim(all.rel.votes.fd)[1:4])
-    }
 
   hist(all.rel.votes.fd)
 ```
