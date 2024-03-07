@@ -46,8 +46,7 @@ all.rel.votes <-  all.abs.votes/all.abs.total[,rep(vote.denom,length(party.selec
 
 
 ```{r}
-library(kit)
-
+library(kit) # a package with topn()
 
 relevant.votes <- all.rel.votes[,,1,,1] 
 
