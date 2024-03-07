@@ -165,8 +165,8 @@ for (i.switch in 1:3){
       all.results <- rbind(all.results,rel.information)
   }
 }
-all.results[rownames(all.results)=="cross.treat","treat"] <- all.results[rownames(all.results)=="cross.treat","cross.treat"]
-
+all.results[rownames(all.results)=="cross.treat","treat"] <- 
+             all.results[rownames(all.results)=="cross.treat","cross.treat"]
 
 all.results <- as.data.frame(all.results)
 ```
@@ -175,10 +175,6 @@ all.results <- as.data.frame(all.results)
 
 
 ```{r,warning=F}
-# Add LaTeX font
-library(extrafont)
-loadfonts()
-library(fontcm)
 
 # Sort data 
     data.tv <- all.results
