@@ -168,6 +168,89 @@ for (i.vote in 1:2){
       }
     
     
+    # Calculate estimate, standard error, and confidence intervals
+    data.tv$lower.b <- data.tv$Estimate - 1.96* data.tv$`Std. Error`
+    data.tv$upper.b <- data.tv$Estimate + 1.96* data.tv$`Std. Error`
+    
+    # Set y-axis range based on confidence intervals
+    y.range <- range(c(data.tv$lower.b,data.tv$upper.b),na.rm=T)
+    y.range[2] <- y.range[2]
+    y.range[1] <- y.range[1]- (y.range[2]-y.range[1])*0.1
+    
+    data.tv <- rbind(data.tv[1:3,],NA,data.tv[4:nrow(data.tv),])
+
+    
+
+    title <- paste0("All_Estimated_Effects_with_JK_",
+                    c("cand","list")[i.cand],"on",
+                    c("FPTP","PR")[i.vote])
+    # Create PDF file for the current voting scenario
+    pdf(file=paste0("Figures/",title,".pdf"),
+        width=5,
+        height=5.5,
+        pointsize = 13)#,
+        #family = "CM Roman")
+
+    
+    # Plot with colors and labels
+    plot(data.tv$Estimate, axes=F,
+       xlab="", 
+       ylab=paste("Effect on",c("FPTP","PR")[i.vote], "share"),
+       ylim=y.range,
+       xlim=c(0.5,nrow(data.tv)+.5),
+    #main=title,
+    pch=19,
+    lwd = 1.5)
+
+    data.tv$i.switch[is.na(data.tv$i.switch)] <- 0
+
+    # Add vertical lines at each data point
+    for (i.party in 1:nrow(data.tv)){
+    lines(c(i.party,i.party),
+          c(data.tv$lower.b[i.party],data.tv$upper.b[i.party]),
+                lty=1, lwd=2.5)
+    #points(i.party, p.estimate[i.party], col = "black", pch = 21)
+    }
+
+    # Add x-axis and y-axis labels
+    axis(1, label=F,at=c(1:3,5:nrow(data.tv)))
+    axis(2)
+    abline(h=0,lty=2)
+
+    data.tv$i.switch[data.tv$i.switch==0] <- NA
+text(x = 1:nrow(data.tv),
+     ## Move labels to just below bottom of chart.
+     y = par("usr")[3] - (y.range[2]-y.range[1])*0.1,
+     ## Use names from the data list.
+     labels = c("All","Major","Minor",
+                "",
+                "w/o CDU/CSU",
+                "w/o SPD",
+                "w/o FDP",
+                "w/o Left",
+                "w/o Green",
+                "w/o AfD"
+                ),
+     ## Change the clipping region.
+     xpd = NA,
+     ## Rotate the labels by 35 degrees.
+     srt = 35,
+     ## Adjust the labels to 80% right-justified.
+     adj = 0.7,
+     ## Increase label size.
+     cex = 0.9)
+
+    #data.tv$treat[is.na(data.tv$treat)] <- ""
+  text(c(1:nrow(data.tv))[!is.na(data.tv$treat)],rep(y.range[1],nrow(data.tv))[!is.na(data.tv$treat)],
+       paste0("(",data.tv$treat,")")[!is.na(data.tv$treat)],
+       cex=0.8)
+    dev.off() # close the current PDF file
+    
+    
+    
+    
+    
+    
   }
 }
 
