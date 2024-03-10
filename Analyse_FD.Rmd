@@ -280,7 +280,7 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 save(all.results.smd,
      all.results.pr,
   file=paste0("Data/Estimation_Results_PSelect",party.selec.switch,
-             "_denom",vote.denom,".RData"))
+             "_denom",vote.denom,c("","_spillover")[spill.over.switch+1],".RData"))
 
 ```
 
