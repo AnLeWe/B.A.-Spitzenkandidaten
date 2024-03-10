@@ -165,7 +165,7 @@ Incomporting spill-over treatment
 ```{r}
 if (spill.over.switch>0){
   
-  for (i.btw in c(1:3,5)){
+  for (i.btw in c(1:5)){
       temp.treat <- all.treat.dummy.fd[,,1,i.btw]
       temp.mat <- as.matrix(all.nb.mat[[6-i.btw]])
       diag(temp.mat) <- 1 # replace the diagonal elements with 1
@@ -174,6 +174,8 @@ if (spill.over.switch>0){
       all.treat.dummy.fd[,,1,i.btw] <- spill.treat
   }
 }
+
+apply(all.treat.dummy.fd,3,table)
 
 ```
 
@@ -447,7 +449,7 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 save(all.results.t1.smd,
      all.results.t1.pr,
   file=paste0("Data/Exogeneity_Results_PSelect",party.selec.switch,
-              "_denom",vote.denom,".RData"))
+              "_denom",vote.denom,table(all.treat.dummy.fd)".RData"))
 ```
 
 
