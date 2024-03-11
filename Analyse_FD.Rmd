@@ -21,8 +21,9 @@ load("Data/analysis_dat.RData")
 ## Switch for party selection and spill over
  
 ```{r}
-party.selec.switch <-1
+party.selec.switch <-3
 spill.over.switch <-0 # 1: with spill over
+turnout.switch <- 1 # 1: turnout analysis
 ```
 
 See below what value corresponds to what party selection.
@@ -31,7 +32,6 @@ See below what value corresponds to what party selection.
 
 ## Do not select only one party. This won't work!
 
-if (party.selec.switch==0) party.selection <- c(1)        #  turnout
 if (party.selec.switch==1) party.selection <- c(1:6)      # C S A F L G
 if (party.selec.switch==2) party.selection <- c(1:2)      # nur C und S
 if (party.selec.switch==3) party.selection <- c(3:6)      # ohne C und S
@@ -67,7 +67,7 @@ if (spill.over.switch>0){
 ```{r}
 
 vote.denom <- 1
-if (party.selec.switch==0) vote.denom <- 1 
+if (turnout.switch==1) vote.denom <- 1 
 
 ```
 
@@ -88,18 +88,20 @@ all.treat has 4 dimensions:
 - 6 elections
 
 ```{r}
-if (party.selec.switch!=0){
+if (turnout.switch==0){
   all.abs.votes <- all.abs.votes[,party.selection,,,]
   all.treat     <- all.treat[,party.selection,,]
+  all.rel.votes <-  all.abs.votes/
+  all.abs.total[,rep(vote.denom,length(party.selection)),,,,drop=F] 
 }else{
-  all.abs.votes <- all.abs.total[,rep(2,length(party.selection)),,,,drop=F] 
+  all.abs.votes <- all.abs.total[,2,,,,drop=F] 
+  all.treat     <- all.treat[,party.selection,,]
   temp <- apply(all.treat,c(1,3,4),max)
   all.treat <- array(temp,dim=c(299,1,2,6))    
+  all.rel.votes <-  all.abs.votes/all.abs.total[,rep(vote.denom,1),,,,drop=F] 
 }
 
 
-all.rel.votes <-  all.abs.votes/
-  all.abs.total[,rep(vote.denom,length(party.selection)),,,,drop=F] 
 
 ```
 
@@ -136,9 +138,15 @@ apply(all.treat.dummy,3,table)
 table(all.treat.incumb)
 apply(all.treat.incumb,3,table)
 
-all.treat.dummy.fd <- 
-all.treat.incumb.fd <- 
-  array(NA,dim=c(299,length(party.selection),2,5))
+if (turnout.switch==0){
+  all.treat.dummy.fd <- 
+  all.treat.incumb.fd <- 
+      array(NA,dim=c(299,length(party.selection),2,5))
+}else{
+  all.treat.dummy.fd <- 
+  all.treat.incumb.fd <- 
+      array(NA,dim=c(299,1,2,5))
+}
 
 for (i.time in 1:5){ # loop over time
   all.treat.dummy.fd[,,,i.time] <-  
@@ -150,7 +158,9 @@ for (i.time in 1:5){ # loop over time
 }
 
 table(all.treat.dummy.fd)
+apply(all.treat.dummy.fd,3,table)
 table(all.treat.incumb.fd)
+apply(all.treat.incumb.fd,3,table)
 ```
 
 The resulting all.treat.dummy.fd has:
@@ -204,11 +214,15 @@ Party index
 ```{r}
 party.index <- all.treat.dummy.fd
 
-party.labels <- c("CDU","SPD","AFD","FDP","LIN","GRU")[party.selection]
-if(party.selec.switch==0) party.labels <- "Turnout"
-for (i.party in 1:length(party.selection)){
-  party.index[,i.party,,] <- party.labels[i.party]
+if(turnout.switch==0){
+    party.labels <- c("CDU","SPD","AFD","FDP","LIN","GRU")[party.selection]
+    for (i.party in 1:length(party.selection)){
+      party.index[,i.party,,] <- party.labels[i.party]
+    }}else{
+  party.labels <- "Turnout"
+  party.index[,1,,] <- party.labels
 }
+
 
 table(party.index)
 ```
@@ -221,7 +235,7 @@ library(lmtest)
 
 for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
-  all.results <- vector("list",3) # empty list to store the results
+  all.results <- vector("list",5) # empty list to store the results
 
   votes.in.array <- all.rel.votes.fd[,,i.smdpr,]
   votes <- c(all.rel.votes.fd[,,i.smdpr,] )
@@ -245,7 +259,7 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   ## Model 
 
   print(c("DV: Erststimme","DV: Zweitstimme")[i.smdpr])
-  if (party.selec.switch!=0){
+  if (turnout.switch==0){
       print(summary(lm.out <- lm(votes~ treat +
                                     #treat.incumb + # control for Incumbency
                                     cross.treat +
@@ -282,12 +296,17 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 save(all.results.smd,
      all.results.pr,
   file=paste0("Data/Estimation_Results_PSelect",party.selec.switch,
-             "_denom",vote.denom,c("","_spillover")[spill.over.switch+1],".RData"))
+             "_denom",vote.denom,
+             c("","_spillover")[spill.over.switch+1],
+             c("","_turnout")[turnout.switch+1],
+             ".RData"))
 
 ```
 
 
-
+```{r}
+if (turnout.switch==1) knitr::knit_exit()
+```
 
 ### Diagnostics I: Serial correlated errors
 
@@ -449,7 +468,10 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 save(all.results.t1.smd,
      all.results.t1.pr,
   file=paste0("Data/Exogeneity_Results_PSelect",party.selec.switch,
-              "_denom",vote.denom,c("","_spillover")[spill.over.switch+1],".RData"))
+              "_denom",vote.denom,
+              c("","_spillover")[spill.over.switch+1],
+              c("","_turnout")[turnout.switch+1],
+              ".RData"))
 ```
 
 
