@@ -18,10 +18,11 @@ load("Data/analysis_dat.RData")
 ```
 
 
-## Switch for party selection
-
+## Switch for party selection and spill over
+ 
 ```{r}
 party.selec.switch <-1
+spill.over.switch <-0 # 1: with spill over
 ```
 
 See below what value corresponds to what party selection.
@@ -43,6 +44,19 @@ if (party.selec.switch==9) party.selection <- c(1:2,4:6)  # ohne AfD
 if (party.selec.switch==10) party.selection <- c(2,4:6)    # ohne C und A
 if (party.selec.switch==11) party.selection <- c(3:4,6)    # ohne C, S und L
 ```
+
+Reading adjacent matrix
+
+```{r}
+if (spill.over.switch>0){
+  load("Data/btw_all_shape.RData")
+  all.nb.mat <- all.nb.mat[3:7]
+}
+
+```
+
+
+
 
 ## Switch for denominator to compute the vote share
 
@@ -138,6 +152,33 @@ for (i.time in 1:5){ # loop over time
 table(all.treat.dummy.fd)
 table(all.treat.incumb.fd)
 ```
+
+The resulting all.treat.dummy.fd has:
+- 299 districts
+- 6 parties
+- 2 tiers
+- 5 timepoints
+
+
+Incomporting spill-over treatment
+
+```{r}
+if (spill.over.switch>0){
+  
+  for (i.btw in c(1:5)){
+      temp.treat <- all.treat.dummy.fd[,,1,i.btw]
+      temp.mat <- as.matrix(all.nb.mat[[6-i.btw]])
+      diag(temp.mat) <- 1 # replace the diagonal elements with 1
+      spill.treat <- temp.mat%*%temp.treat
+
+      all.treat.dummy.fd[,,1,i.btw] <- spill.treat
+  }
+}
+
+apply(all.treat.dummy.fd,3,table)
+
+```
+
 
 
 
@@ -241,7 +282,7 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 save(all.results.smd,
      all.results.pr,
   file=paste0("Data/Estimation_Results_PSelect",party.selec.switch,
-             "_denom",vote.denom,".RData"))
+             "_denom",vote.denom,c("","_spillover")[spill.over.switch+1],".RData"))
 
 ```
 
@@ -408,7 +449,7 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 save(all.results.t1.smd,
      all.results.t1.pr,
   file=paste0("Data/Exogeneity_Results_PSelect",party.selec.switch,
-              "_denom",vote.denom,".RData"))
+              "_denom",vote.denom,c("","_spillover")[spill.over.switch+1],".RData"))
 ```
 
 

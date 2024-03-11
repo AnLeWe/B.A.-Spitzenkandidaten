@@ -11,7 +11,7 @@
 
 <meta name="author" content="Anna Werner &amp; Susumu Shikano" />
 
-<meta name="date" content="2024-03-07" />
+<meta name="date" content="2024-03-10" />
 
 <title>First Differences</title>
 
@@ -352,7 +352,7 @@ display: none;
 
 <h1 class="title toc-ignore">First Differences</h1>
 <h4 class="author">Anna Werner &amp; Susumu Shikano</h4>
-<h4 class="date">2024-03-07</h4>
+<h4 class="date">2024-03-10</h4>
 
 </div>
 
@@ -361,9 +361,10 @@ display: none;
 <h2>Load data</h2>
 <pre class="r"><code>load(&quot;Data/analysis_dat.RData&quot;)</code></pre>
 </div>
-<div id="switch-for-party-selection" class="section level2">
-<h2>Switch for party selection</h2>
-<pre class="r"><code>party.selec.switch &lt;-1</code></pre>
+<div id="switch-for-party-selection-and-spill-over" class="section level2">
+<h2>Switch for party selection and spill over</h2>
+<pre class="r"><code>party.selec.switch &lt;-1
+spill.over.switch &lt;-0 # 1: with spill over</code></pre>
 <p>See below what value corresponds to what party selection.</p>
 <pre class="r"><code>## Do not select only one party. This won&#39;t work!
 
@@ -379,6 +380,11 @@ if (party.selec.switch==8) party.selection &lt;- c(1:5)     # ohne G
 if (party.selec.switch==9) party.selection &lt;- c(1:2,4:6)  # ohne AfD
 if (party.selec.switch==10) party.selection &lt;- c(2,4:6)    # ohne C und A
 if (party.selec.switch==11) party.selection &lt;- c(3:4,6)    # ohne C, S und L</code></pre>
+<p>Reading adjacent matrix</p>
+<pre class="r"><code>if (spill.over.switch&gt;0){
+  load(&quot;Data/btw_all_shape.RData&quot;)
+  all.nb.mat &lt;- all.nb.mat[3:7]
+}</code></pre>
 </div>
 <div id="switch-for-denominator-to-compute-the-vote-share" class="section level2">
 <h2>Switch for denominator to compute the vote share</h2>
@@ -473,6 +479,26 @@ table(all.treat.dummy.fd)</code></pre>
 <pre><code>## all.treat.incumb.fd
 ##    -1     0     1 
 ##   219 17419   302</code></pre>
+<p>The resulting all.treat.dummy.fd has: - 299 districts - 6 parties - 2
+tiers - 5 timepoints</p>
+<p>Incomporting spill-over treatment</p>
+<pre class="r"><code>if (spill.over.switch&gt;0){
+  
+  for (i.btw in c(1:5)){
+      temp.treat &lt;- all.treat.dummy.fd[,,1,i.btw]
+      temp.mat &lt;- as.matrix(all.nb.mat[[6-i.btw]])
+      diag(temp.mat) &lt;- 1 # replace the diagonal elements with 1
+      spill.treat &lt;- temp.mat%*%temp.treat
+
+      all.treat.dummy.fd[,,1,i.btw] &lt;- spill.treat
+  }
+}
+
+apply(all.treat.dummy.fd,3,table)</code></pre>
+<pre><code>##    [,1] [,2]
+## -1   22  439
+## 0  8921 7906
+## 1    27  625</code></pre>
 </div>
 </div>
 <div id="index-array" class="section level2">
@@ -751,7 +777,7 @@ library(lmtest)</code></pre>
 <pre class="r"><code>save(all.results.smd,
      all.results.pr,
   file=paste0(&quot;Data/Estimation_Results_PSelect&quot;,party.selec.switch,
-             &quot;_denom&quot;,vote.denom,&quot;.RData&quot;))</code></pre>
+             &quot;_denom&quot;,vote.denom,c(&quot;&quot;,&quot;_spillover&quot;)[spill.over.switch+1],&quot;.RData&quot;))</code></pre>
 <div id="diagnostics-i-serial-correlated-errors" class="section level3">
 <h3>Diagnostics I: Serial correlated errors</h3>
 <p>We regress u_t on u_t-1. If the effect is significant, there are
@@ -1181,7 +1207,7 @@ treatment variable at t+1. For this purpose, we lose the most recent BTW
 <pre class="r"><code>save(all.results.t1.smd,
      all.results.t1.pr,
   file=paste0(&quot;Data/Exogeneity_Results_PSelect&quot;,party.selec.switch,
-              &quot;_denom&quot;,vote.denom,&quot;.RData&quot;))</code></pre>
+              &quot;_denom&quot;,vote.denom,c(&quot;&quot;,&quot;_spillover&quot;)[spill.over.switch+1],&quot;.RData&quot;))</code></pre>
 </div>
 </div>
 
