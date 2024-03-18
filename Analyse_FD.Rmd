@@ -21,9 +21,9 @@ load("Data/analysis_dat.RData")
 ## Switch for party selection and spill over
  
 ```{r}
-party.selec.switch <-3
+party.selec.switch <-2
 spill.over.switch <-0 # 1: with spill over
-turnout.switch <- 1 # 1: turnout analysis
+turnout.switch <- 0 # 1: turnout analysis
 ```
 
 See below what value corresponds to what party selection.
@@ -33,8 +33,8 @@ See below what value corresponds to what party selection.
 ## Do not select only one party. This won't work!
 
 if (party.selec.switch==1) party.selection <- c(1:6)      # C S A F L G
-if (party.selec.switch==2) party.selection <- c(1:2)      # nur C und S
-if (party.selec.switch==3) party.selection <- c(3:6)      # ohne C und S
+if (party.selec.switch==2) party.selection <- c(1:2,6)      # nur C und S + G (2021)
+if (party.selec.switch==3) party.selection <- c(3:6)      # ohne C und S und G (2021)
 if (party.selec.switch==4) party.selection <- c(2:6)      # ohne C
 if (party.selec.switch==5) party.selection <- c(1,3:6)    # ohne S
 if (party.selec.switch==6) party.selection <- c(1:3,5:6) # ohne F
@@ -54,7 +54,6 @@ if (spill.over.switch>0){
 }
 
 ```
-
 
 
 
@@ -227,6 +226,21 @@ if(turnout.switch==0){
 table(party.index)
 ```
 
+### Special treatment of Greens (2021)
+
+```{r}
+if (party.selec.switch==2) {
+  all.rel.votes.fd[party.index=="GRU" & year.index!=2021] <-NA
+}
+if (party.selec.switch==3) {
+  all.rel.votes.fd[party.index=="GRU" & year.index==2021] <-NA
+}
+
+```
+
+
+
+
 ## First difference models
 
 ```{r}
@@ -293,6 +307,11 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   if (i.smdpr==2) all.results.pr <- all.results
 }
 
+
+```
+
+
+```{r}
 save(all.results.smd,
      all.results.pr,
   file=paste0("Data/Estimation_Results_PSelect",party.selec.switch,
@@ -302,6 +321,9 @@ save(all.results.smd,
              ".RData"))
 
 ```
+
+
+
 
 
 ```{r}
