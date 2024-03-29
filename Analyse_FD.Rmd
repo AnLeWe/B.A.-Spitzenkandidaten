@@ -22,8 +22,8 @@ load("Data/analysis_dat.RData")
  
 ```{r}
 party.selec.switch <-3
-spill.over.switch <-0 # 1: with spill over
-turnout.switch <- 1 # 1: turnout analysis
+spill.over.switch <-1 # 1: with spill over
+turnout.switch <- 0 # 1: turnout analysis
 ```
 
 See below what value corresponds to what party selection.
@@ -173,16 +173,18 @@ Incomporting spill-over treatment
 
 ```{r}
 if (spill.over.switch>0){
-  
+  for (i.tier in 1:2){
   for (i.btw in c(1:5)){
-      temp.treat <- all.treat.dummy.fd[,,1,i.btw]
+      temp.treat <- all.treat.dummy.fd[,,i.tier,i.btw]
       temp.mat <- as.matrix(all.nb.mat[[6-i.btw]])
       diag(temp.mat) <- 1 # replace the diagonal elements with 1
       spill.treat <- temp.mat%*%temp.treat
 
-      all.treat.dummy.fd[,,1,i.btw] <- spill.treat
+      spill.treat[spill.treat>0] <- 1
+      spill.treat[spill.treat<0] <- -1
+      all.treat.dummy.fd[,,i.tier,i.btw] <- spill.treat
   }
-}
+}}
 
 apply(all.treat.dummy.fd,3,table)
 
@@ -327,7 +329,7 @@ save(all.results.smd,
 
 
 ```{r}
-if (turnout.switch==1) knitr::knit_exit()
+if (turnout.switch==1|spill.over.switch==1) knitr::knit_exit()
 ```
 
 ### Diagnostics I: Serial correlated errors
