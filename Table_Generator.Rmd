@@ -22,16 +22,6 @@ lang.switch <- 2 # 1: German, 2: English
 
 
 
-```{r}
-load(
-  file=paste0("Data/Estimation_Results_PSelect",party.selec.switch,
-             "_denom",vote.denom,
-             c("","_spillover")[spill.over.switch+1],
-             c("","_turnout")[turnout.switch+1],
-             ".RData"))
-
-```
-
 
 
 
@@ -114,7 +104,7 @@ stargazer(lm.smd, lm.smd.cs, lm.smd.aflg,
           model.numbers = TRUE,
           align = TRUE,
           #single.row=TRUE,
-          font.size = "scriptsize",
+          font.size = "small",
           no.space = TRUE,
           #omit.stat = c("f","adj.rsq"),
           omit = c("year2009:partyCDU", "year2013:partyCDU", "year2017:partyCDU", "year2021:partyCDU",
@@ -152,7 +142,7 @@ stargazer(lm.smd, lm.smd.cs, lm.smd.aflg,
           notes = c("Hier werden Anmerkungen stehen",
                     "Note: The robust HAC standard errors are shown in brackets.")[lang.switch],#,
           style = "apsr",
-          type = "html",
+          type = "latex",
           out = c("Table_1.html")
           )
 ```
@@ -175,7 +165,7 @@ stargazer(lm.pr, lm.pr.cs, lm.pr.aflg,
           model.numbers = TRUE,
           align = TRUE,
           #single.row=TRUE,
-          font.size = "scriptsize",
+          font.size = "small",
           no.space = TRUE,
           #omit.stat = c("f","adj.rsq"),
           omit = c(12:31),
@@ -210,7 +200,7 @@ stargazer(lm.pr, lm.pr.cs, lm.pr.aflg,
           notes = c("Hier werden Anmerkungen stehen",
                     "Note: The robust HAC standard errors are shown in brackets.")[lang.switch],#,
           style = "apsr",
-          type = "html",
+          type = "latex",
           out = c("Table_2.html")
           )
 ```
