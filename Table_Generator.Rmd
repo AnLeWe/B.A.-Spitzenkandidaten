@@ -270,26 +270,83 @@ stargazer(lm.smd.to, lm.smd.cs.to, lm.smd.aflg.to,
 
 ## Diagnostics II: Exogeneity of the treatment
 
+# ```{r}
+# load("Data/Exogeneity_Results_PSelect1_denom1.RData")
+# lm.t1.pr <- all.results.t1.pr[[1]]
+# se.t1.pr <- all.results.t1.pr[[5]]
+# lm.t1.smd <- all.results.t1.smd[[1]]
+# se.t1.smd <- all.results.t1.smd[[5]]
+# 
+# load("Data/Estimation_Results_PSelect2_denom1.RData")
+# lm.t1.pr.cs <- all.results.t1.pr[[1]]
+# se.t1.pr.cs <- all.results.t1.pr[[5]]
+# lm.t1.smd.cs <- all.results.t1.smd[[1]]
+# se.t1.smd.cs <- all.results.t1.smd[[5]]
+# 
+# load("Data/Estimation_Results_PSelect3_denom1.RData")
+# lm.t1.pr.aflg <- all.results.t1.pr[[1]]
+# se.t1.pr.aflg <- all.results.t1.pr[[5]]
+# lm.t1.smd.aflg <- all.results.t1.smd[[1]]
+# se.t1.smd.aflg <- all.results.t1.smd[[5]]
+# ```
+
+
 ```{r}
-load("Data/Exogeneity_Results_PSelect1_denom1.RData")
-lm.t1.pr <- all.t1.results.pr[[1]]
-se.t1.pr <- all.t1.results.pr[[5]]
-lm.t1.smd <- all.t1.results.smd[[1]]
-se.t1.smd <- all.t1.results.smd[[5]]
+library(stargazer)
 
-load("Data/Estimation_Results_PSelect2_denom1.RData")
-lm.t1.pr.cs <- all.t1.results.pr[[1]]
-se.t1.pr.cs <- all.t1.results.pr[[5]]
-lm.t1.smd.cs <- all.t1.results.smd[[1]]
-se.t1.smd.cs <- all.t1.results.smd[[5]]
+spill.over.switch <- 0
+vote.denom <- 1
 
-load("Data/Estimation_Results_PSelect3_denom1.RData")
-lm.t1.pr.aflg <- all.t1.results.pr[[1]]
-se.t1.pr.aflg <- all.t1.results.pr[[5]]
-lm.t1.smd.aflg <- all.t1.results.smd[[1]]
-se.t1.smd.aflg <- all.t1.results.smd[[5]]
+#for (turnout.switch in 0:1){
+    for (party.selec.switch in 1:3){
+    load(
+      file=paste0("Data/Exogeneity_Results_PSelect",party.selec.switch,
+                 "_denom",vote.denom,
+                 ".RData"))
+    
+      #if (turnout.switch==0){ 
+          if (party.selec.switch==1){
+            lm.t1.pr <- all.results.t1.pr[[1]]
+            se.t1.pr <- all.results.t1.pr[[5]]
+            lm.t1.smd <- all.results.t1.smd[[1]]
+            se.t1.smd <- all.results.t1.smd[[5]]
+          }
+          
+          if (party.selec.switch==2){
+            lm.t1.pr.cs <- all.results.t1.pr[[1]]
+            se.t1.pr.cs <- all.results.t1.pr[[5]]
+            lm.t1.smd.cs <- all.results.t1.smd[[1]]
+            se.t1.smd.cs <- all.results.t1.smd[[5]]
+          }
+          
+          if (party.selec.switch==3){
+            lm.t1.pr.aflg <- all.results.t1.pr[[1]]
+            se.t1.pr.aflg <- all.results.t1.pr[[5]]
+            lm.t1.smd.aflg <- all.results.t1.smd[[1]]
+            se.t1.smd.aflg <- all.results.t1.smd[[5]]
+          }
+     # }else{
+          # if (party.selec.switch==1){
+          #   lm.t1.smd.to <- all.results.t1.smd[[1]]
+          #   se.t1.smd.to <- all.results.t1.smd[[5]]
+          # }
+          # 
+          # if (party.selec.switch==2){
+          #   lm.t1.smd.cs.to <- all.results.t1.smd[[1]]
+          #   se.t1.smd.cs.to <- all.results.t1.smd[[5]]
+          # }
+          # 
+          # if (party.selec.switch==3){
+          #   lm.t1.smd.aflg.to <- all.results.t1.smd[[1]]
+          #   se.t1.smd.aflg.to <- all.results.t1.smd[[5]]
+          # }
+        
+      #} 
+    #}
+}
+
+
 ```
-
 
 ## Exogeneity with vote share based on eligible citizen (denom1)
 ```{r}
