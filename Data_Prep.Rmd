@@ -769,6 +769,44 @@ for (i.party in 1:length(party.selection)){
 
 
 
+### Sozio-strukturelle Daten
+
+
+```{r}
+
+file.names <- dir("BTW_Strukturdaten")
+
+list.struktur <- vector("list",length(file.names))
+
+## How many lines to skip to obtain the header
+to.skip.header <- c(3,3,3,4,8,8)
+lines.header <- c(2,2,3,1,1,1)
+to.skip.data <-c(5,5,7,6,9,9)
+
+
+for (i in 1:length(file.names)){
+  
+  temp.header <- read.csv(paste0("BTW_Strukturdaten/",file.names[i]),
+                                 skip=to.skip.header[i], 
+                                 #nrows=lines.header[i],
+                                 nrows=1,
+                                 header=F,sep=";")
+  
+  
+   temp.dat <- read.csv(paste0("BTW_Strukturdaten/",file.names[i]),
+                                 skip=to.skip.data[i], header=F,
+                                 sep=";")
+  
+  colnames(temp.dat) <- temp.header
+  list.struktur[[i]] <- temp.dat
+}
+
+
+```
+
+
+
+
 
 ## Save all the objects
 
