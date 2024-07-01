@@ -17,19 +17,31 @@ knitr::opts_chunk$set(echo = TRUE)
 load("Data/analysis_dat.RData")
 ```
 
+## Switch for party selection and spill over
+ 
+```{r}
+party.selec.switch <- 2
+spill.over.switch <-0 # 1: with spill over
+turnout.switch <- 0 # 1: turnout analysis
+```
 
-
-## Switch for party selection
+See below what value corresponds to what party selection.
 
 ```{r}
 
 ## Do not select only one party. This won't work!
 
-#party.selection <- c(1:6) # C S A F L G
-#party.selection <- c(1:2) # nur C und S
-party.selection <- c(3:6) # ohne C und S
-#party.selection <- c(1:4,6) # ohne Linke
-
+if (party.selec.switch==1) party.selection <- c(1:6)      # C S A F L G
+if (party.selec.switch==2) party.selection <- c(1:2,6)      # nur C und S + G (2021)
+if (party.selec.switch==3) party.selection <- c(3:6)      # ohne C und S und G (2021)
+if (party.selec.switch==4) party.selection <- c(2:6)      # ohne C
+if (party.selec.switch==5) party.selection <- c(1,3:6)    # ohne S
+if (party.selec.switch==6) party.selection <- c(1:3,5:6) # ohne F
+if (party.selec.switch==7) party.selection <- c(1:4,6)    # ohne Linke
+if (party.selec.switch==8) party.selection <- c(1:5)     # ohne G
+if (party.selec.switch==9) party.selection <- c(1:2,4:6)  # ohne AfD
+if (party.selec.switch==10) party.selection <- c(2,4:6)    # ohne C und A
+if (party.selec.switch==11) party.selection <- c(3:4,6)    # ohne C, S und L
 ```
 
 
@@ -40,6 +52,17 @@ all.treat     <- all.treat[,party.selection,,]
 ```
 
 
+## Switch for denominator to compute the vote share
+
+  1: eligible citizens (for turnout in analysis, this option has to be selected.)
+  2: all voters
+  3: all valid votes 
+
+```{r}
+
+vote.denom <- 1
+
+```
 
 ### Election results
 
@@ -47,7 +70,7 @@ We first compute the relative vote shares:
 
 ```{r}
 
-  all.rel.votes <-  all.abs.votes/all.abs.total[,rep(2,length(party.selection)),,,] 
+  all.rel.votes <-  all.abs.votes/all.abs.total[,rep(vote.denom,length(party.selection)),,,] 
   # If one uses valid votes: rep(3,6)
   # If one uses all voters: rep(2,6)
   # If one uses all eligible citizens: rep(1,6)
@@ -103,12 +126,28 @@ for (i.party in 1:length(party.selection)){
 table(party.index)
 ```
 
-Modification of wahlkreis index array
+Modification of Wahlkreis index array
 
 ```{r}
 all.wkr.index <- all.wkr.index[,party.selection,,]
 
 ```
+
+
+### Special treatment of Greens (2021)
+
+```{r}
+sum(is.na(all.rel.votes))
+if (party.selec.switch==2) {
+  all.rel.votes[party.index=="GRU" & year.index!=2021] <- NA
+}
+sum(is.na(all.rel.votes))
+if (party.selec.switch==3) {
+  all.rel.votes[party.index=="GRU" & year.index==2021] <- NA
+}
+
+```
+
 
 # Fixed effect models
 
@@ -134,16 +173,16 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
   lm.dat <- cbind(lm.dat,treat,cross.treat,last.votes,year,party,district)
   
   ## Model with year and party fixed effects.
-  #print(c("Erststimme (H1a)","Zweitstimme  (H1b)")[i.smdpr])
-  #options(max.print=100)
-  #print(summary(lm.fe1 <- lm(votes~ treat + last.votes+
-                               #party * year + district*party )))
-  
-  #print(c("Robust standard error"))
-  #r.se.fe1 <- sqrt(diag(vcovHC(lm.fe1, type = 'HC')))
-  #print(coef.fe1 <- coeftest(lm.fe1, vcov = vcovHC(lm.fe1, type = 'HC')))
+  print(c("Erststimme (H1a)","Zweitstimme  (H1b)")[i.smdpr])
+  options(max.print=100)
+  print(summary(lm.fe1 <- lm(votes~ treat + last.votes+
+                               party * year + district*party )))
 
-  #all.results[[6]] <- lm.fe1
+  print(c("Robust standard error"))
+  r.se.fe1 <- sqrt(diag(vcovHC(lm.fe1, type = 'HC')))
+  print(coef.fe1 <- coeftest(lm.fe1, vcov = vcovHC(lm.fe1, type = 'HC')))
+
+  all.results[[6]] <- lm.fe1
   
   
   ## Model with cross treatment (contamination)
@@ -171,9 +210,8 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
 save(all.results.smd,
      all.results.pr,
- file=paste0("Data/Estimation_Results_FE_PSelect3_denom2.RData")#,party.selec.switch,
-              #"_denom"
-              #,vote.denom,".RData")
+ file=paste0("Data/Estimation_Results_FE_RE_PSelect",party.selec.switch,
+              "_denom",vote.denom,".RData")
               )
 
 options(max.print=10000)
