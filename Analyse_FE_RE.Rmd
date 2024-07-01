@@ -139,7 +139,7 @@ all.wkr.index <- all.wkr.index[,party.selection,,]
 ```{r}
 sum(is.na(all.rel.votes))
 if (party.selec.switch==2) {
-  all.rel.votes[party.index=="GRU" & year.index!=2021] <- NA
+  all.rel.votes[party.index=="GRU" & year.index<2017] <- NA
 }
 sum(is.na(all.rel.votes))
 if (party.selec.switch==3) {
@@ -152,6 +152,7 @@ if (party.selec.switch==3) {
 # Fixed effect models
 
 ```{r}
+library(lmtest)
 
 for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
