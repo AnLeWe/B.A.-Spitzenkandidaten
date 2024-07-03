@@ -155,6 +155,7 @@ print(paste("Number of non-missings after making Baerbock as KK",sum(is.na(all.r
 
 ```{r}
 library(lmtest)
+library(sandwich)
 
 for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
@@ -301,86 +302,6 @@ wkr.fe[order(wkr.fe,decreasing=TRUE)][1:5]
 
 ```
 
-### Exogeneity
-
-```{r}
-# Wooldridge's test
-
-options(max.print=100)
-# District candidacy: Treatment for SMD
- 
-dep.var <- c(all.rel.votes[,,1,2:5])
-lagged.dv <- c(all.rel.votes[,,1,3:6])
-treat <- c(all.rel.votes[,,1,2:5])
-treat.t1 <- c(all.rel.votes[,,1,1:4])
-cross.treat <- c(all.rel.votes[,,2,2:5])
-cross.treat.t1 <- c(all.rel.votes[,,2,1:4])
-
-party.fe <- factor(c(party.index[,,1,2:5]),
-                   levels=c("CDU","SPD","AFD","FDP","LIN","GRU"))
-wkr.fe <- as.factor(c(all.wkr.index[,,1,2:5]))
-
-year.fe  <- as.factor(c(year.index[,,1,1:4] ))
-
-summary(lm.out <- lm(dep.var ~ lagged.dv +
-             treat + treat.t1+
-             cross.treat + cross.treat.t1+
-             year.fe*party.fe + party.fe*wkr.fe))
-
- print(c("Robust standard error"))
-  r.se <- sqrt(diag(vcovHC(lm.out, type = 'HC')))
-  print(lm.out.robust <- coeftest(lm.out, vcov = vcovHC(lm.out, type = 'HC')))
-
-all.results.smd <- vector("list",3)
-all.results.smd[[1]] <- lm.out
-all.results.smd[[2]] <- lm.out.robust
-all.results.smd[[3]] <- c("empty")
-all.results.smd[[4]] <- c("empty")
-all.results.smd[[5]] <- r.se
-
-# PR list candidacy: Treatment for PR
- 
-all.results <- vector("list",3)
-
-dep.var <- c(all.rel.votes[,,2,2:5])
-lagged.dv <- c(all.rel.votes[,,2,3:6])
-treat <- c(all.rel.votes[,,2,2:5])
-treat.t1 <- c(all.rel.votes[,,2,1:4])
-cross.treat <- c(all.rel.votes[,,1,2:5])
-cross.treat.t1 <- c(all.rel.votes[,,1,1:4])
-
-party.fe <- factor(c(party.index[,,2,2:5]),
-                   levels=c("CDU","SPD","AFD","FDP","LIN","GRU"))
-wkr.fe <- as.factor(c(all.wkr.index[,,2,2:5]))
-
-year.fe  <- as.factor(c(year.index[,,2,1:4] ))
-
-summary(lm.out <- lm(dep.var ~ lagged.dv +
-             treat + treat.t1+
-             cross.treat + cross.treat.t1+
-             year.fe*party.fe + party.fe*wkr.fe))
-
-print(c("Robust standard error"))
-  r.se <- sqrt(diag(vcovHC(lm.out, type = 'HC')))
-  print(lm.out.robust <- coeftest(lm.out, vcov = vcovHC(lm.out, type = 'HC')))
-
-  
-all.results.pr <- vector("list",3)
-all.results.pr[[1]] <- lm.out
-all.results.pr[[2]] <- lm.out.robust
-all.results.pr[[3]] <- c("empty")
-all.results.pr[[4]] <- c("empty")
-all.results.pr[[5]] <- r.se
-
-
-save(all.results.smd,
-     all.results.pr,
- file=("Data/Exogeneity_Results_FE_PSelect3_denom2.RData"))
-
-options(max.print=10000)
-
-```
-
 
 ### Diagnostics I: Serial correlated errors
 
@@ -429,4 +350,90 @@ abline(lm.out)
 }
 
 ```
+
+
+### Exogeneity
+
+```{r}
+# Wooldridge's test
+
+options(max.print=100)
+# District candidacy: Treatment for SMD
+ 
+dep.var <- c(all.rel.votes[,,1,2:5])
+lagged.dv <- c(all.rel.votes[,,1,3:6])
+treat <- c(all.rel.votes[,,1,2:5])
+treat.t1 <- c(all.rel.votes[,,1,1:4])
+cross.treat <- c(all.rel.votes[,,2,2:5])
+cross.treat.t1 <- c(all.rel.votes[,,2,1:4])
+
+party.fe <- factor(c(party.index[,,1,2:5]),
+                   levels=c("CDU","SPD","AFD","FDP","LIN","GRU"))
+wkr.fe <- as.factor(c(all.wkr.index[,,1,2:5]))
+
+year.fe  <- as.factor(c(year.index[,,1,1:4] ))
+
+summary(lm.out <- lm(dep.var ~ lagged.dv +
+             treat + treat.t1+
+             cross.treat + cross.treat.t1+
+             year.fe*party.fe + party.fe*wkr.fe))
+
+ print(c("Robust standard error"))
+  r.se <- sqrt(diag(vcovHC(lm.out, type = 'HC')))
+  print(lm.out.robust <- coeftest(lm.out, vcov = vcovHC(lm.out, type = 'HC')))
+
+all.results.smd <- vector("list",3)
+all.results.smd[[1]] <- lm.out
+all.results.smd[[2]] <- lm.out.robust
+all.results.smd[[3]] <- c("empty")
+all.results.smd[[4]] <- c("empty")
+all.results.smd[[5]] <- r.se
+
+
+# PR list candidacy: Treatment for PR
+ 
+all.results <- vector("list",3)
+
+dep.var <- c(all.rel.votes[,,2,2:5])
+lagged.dv <- c(all.rel.votes[,,2,3:6])
+treat <- c(all.rel.votes[,,2,2:5])
+treat.t1 <- c(all.rel.votes[,,2,1:4])
+cross.treat <- c(all.rel.votes[,,1,2:5])
+cross.treat.t1 <- c(all.rel.votes[,,1,1:4])
+
+party.fe <- factor(c(party.index[,,2,2:5]),
+                   levels=c("CDU","SPD","AFD","FDP","LIN","GRU"))
+wkr.fe <- as.factor(c(all.wkr.index[,,2,2:5]))
+
+year.fe  <- as.factor(c(year.index[,,2,1:4] ))
+
+summary(lm.out <- lm(dep.var ~ lagged.dv +
+             treat + treat.t1+
+             cross.treat + cross.treat.t1+
+             year.fe*party.fe + party.fe*wkr.fe))
+
+print(c("Robust standard error"))
+  r.se <- sqrt(diag(vcovHC(lm.out, type = 'HC')))
+  print(lm.out.robust <- coeftest(lm.out, vcov = vcovHC(lm.out, type = 'HC')))
+
+  
+all.results.pr <- vector("list",3)
+all.results.pr[[1]] <- lm.out
+all.results.pr[[2]] <- lm.out.robust
+all.results.pr[[3]] <- c("empty")
+all.results.pr[[4]] <- c("empty")
+all.results.pr[[5]] <- r.se
+
+
+save(all.results.smd,
+     all.results.pr,
+ file=(paste0("Data/Exogeneity_Results_FE_PSelect",party.selec.switch,
+              "_denom",vote.denom,
+                ".RData")))
+
+options(max.print=10000)
+
+```
+
+
 
