@@ -20,7 +20,7 @@ load("Data/analysis_dat.RData")
 ## Switch for party selection and spill over
  
 ```{r}
-party.selec.switch <- 2
+party.selec.switch <- 3
 spill.over.switch <-0 # 1: with spill over
 turnout.switch <- 0 # 1: turnout analysis
 ```
