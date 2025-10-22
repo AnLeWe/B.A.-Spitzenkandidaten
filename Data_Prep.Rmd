@@ -9,20 +9,121 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 ## load packages ##
-pacman::p_load(readr, foreign)
+pacman::p_load(readr,foreign)
 ```
 
 
-## Datensatz
+## Dataset
 
-Dieses Dokument beinahltet den R-Code, mit dessen Hilfe die einzelnen csv. Dateien des Bundeswahlleiters, die die Ergebnisse der Stimmabgabe der Urnen- und Briefwahl nach Wahlkreisen für die Bundestagswahlen von 2002 bis 2021 enthalten, zu einem übergeordneten Datensatz zusammengezogen werden. Die entsprechenden csv. Dateien sind öffentlich auf der Website des Bundeswahlleiters zugänglich (Tabellen: Endgültige Ergebnisse nach Wahlkreisen aller Bundestagswahlen, https://www.bundeswahlleiter.de/bundestagswahlen/2021/ergebnisse.html, Stand: 13.12.2022 ).
+This document contains the R code used to combine the individual CSV files from the Federal Returning Officer, which include the results of in-person and postal voting by constituency for the federal elections from 2002 to 2021, into a single, consolidated dataset. The corresponding CSV files are publicly available on the website of the Federal Returning Officer (Tables: Final results by constituency for all federal elections, [https://www.bundeswahlleiter.de/bundestagswahlen/2021/ergebnisse.html](https://www.bundeswahlleiter.de/bundestagswahlen/2021/ergebnisse.html), as of December 13, 2022).
 
-Die Endgültigen Ergebnisse nach Ländern werden ebenfalls bereit gestellt. Auf diese wurden am .... zugegriffen.
+The final results by federal state are also provided. These were accessed on [date to be inserted].
+
+## Individual datasets by election year
+```{r Data25}
+
+### BTW25 ###
+
+# read in results
+btw25_raw <- read.csv("Data/btw_kerg/btw2025_kerg_00413.csv",
+                      skip=8, sep=";", header = FALSE, encoding="UTF-8")
+
+# Note: additional var "Gewählt"
+
+# read in first row of labels
+main.labels25 <- read.csv("Data/btw_kerg/btw2025_kerg_00413.csv",
+                        skip=5, nrows=1, sep=";", header = FALSE,
+                        colClasses = "character", encoding="UTF-8")
+
+# read in second row of labels
+first.second.votes25 <- read.csv("Data/btw_kerg/btw2025_kerg_00413.csv",
+                               skip=6, nrows=1, sep=";", header = FALSE)
+first.second.votes25[1:4] <- "aaa"
+
+# delete previous results and state-level results
+result2525 <- btw25_raw[,!is.na(first.second.votes25)]
+result2525 <- result2525[result2525[,3]!=99 & !is.na(result2525[,3]),]
+
+# keep only previous results and delete state-level results
+result2521 <- btw25_raw[,is.na(first.second.votes25)|first.second.votes25=="aaa"]
+result2521 <- result2521[result2521[,3]!=99 & !is.na(result2521[,3]),]
+result2521 <- result2521[,1:ncol(result2525)]
+
+# make labels
+main.labels25 <- main.labels25[!is.na(first.second.votes25)]
+main.labels25[seq(6, length(main.labels25), by=2)] <-  # one more initial col in 25
+  main.labels25[seq(5, length(main.labels25)-1, by=2)] # adding the label for SMD and PR votes
+
+main.labels25 <- paste(main.labels25, first.second.votes25[!is.na(first.second.votes25)])
+main.labels25 <- gsub("aaa", "", main.labels25)
+
+main.labels25 <- gsub("ä", "ae", main.labels25)
+main.labels25 <- gsub("Ä", "AE", main.labels25)
+main.labels25 <- gsub("ö", "oe", main.labels25)
+main.labels25 <- gsub("Ö", "OE", main.labels25)
+main.labels25 <- gsub("ü", "ue", main.labels25)
+main.labels25 <- gsub("Ü", "UE", main.labels25)
+
+colnames(result2525) <- colnames(result2521) <- main.labels25
+
+# paste BSW data behind the major parties
+bsw_idx <- grep("Sahra Wagenknecht", names(result2525)) # NOTE: BSW is in position [65][66]
+new_order <- c(1:26, bsw_idx, setdiff(seq_along(result2525), c(1:26, bsw_idx)))
+
+result2525 <- result2525[, new_order]
+result2521 <- result2521[, names(result2525)]  # align by name
 
 
-## Einzelne Datensätze pro Wahljahr
 
-```{r Daten}
+# select columns
+result2525 <- result2525[,1:28]  
+result2521 <- result2521[,1:28]
+
+# fuse CDU and CSU into CDU/CSU
+union2525 <- result2525[,grep("Christlich Demokratische",names(result2525))]
+csu2525 <- result2525[,grep("Christlich-Soziale",names(result2525))]
+union2525[is.na(union2525[,1]),] <- csu2525[is.na(union2525[,1]),]
+result2525[,grep("Christlich Demokratische",names(result2525))] <- union2525
+
+result2525 <- result2525[,grep("Christlich-Soziale",names(result2525),invert=T)]
+
+
+union2521 <- result2521[,grep("Christlich Demokratische",names(result2521))]
+csu2521 <- result2521[,grep("Christlich-Soziale",names(result2521))]
+union2521[is.na(union2521[,1]),] <- csu2521[is.na(union2521[,1]),]
+result2521[,grep("Christlich Demokratische",names(result2521))] <- union2521
+
+result2521 <- result2521[,grep("Christlich-Soziale",names(result2521),invert=T)]
+
+
+# drop additional column "Gewählt"
+result2525 <- result2525[,-4]
+result2521 <- result2521[,-4]
+
+
+# create variable for year of data
+result2525$Jahr <- 2025
+result2521$Jahr <- 2025
+
+# rename variables
+colnames(result2525)[3] <- "Land"
+colnames(result2525)[8:11] <- c("Ungueltige Erststimmen","Ungueltige Zweitstimmen", "Gueltige Erststimmen", "Gueltige Zweitstimmen")
+colnames(result2525)[12:25] <- c("SPD Erststimmen","SPD Zweitstimmen","CDU/CSU Erststimmen","CDU/CSU Zweitstimmen","GRUENE Erststimmen", "GRUENE Zweitstimmen","FDP Erststimmen","FDP Zweitstimmen","AfD Erststimmen","AfD Zweitstimmen","DIE LINKE Erststimmen","DIE LINKE Zweitstimmen", "BSW Erststimmen", "BSW Zweitstimmen")
+
+colnames(result2521)[3] <- "Land"
+colnames(result2521)[8:11] <- c("Ungueltige Erststimmen","Ungueltige Zweitstimmen", "Gueltige Erststimmen", "Gueltige Zweitstimmen")
+colnames(result2521)[12:25] <- c("SPD Erststimmen","SPD Zweitstimmen","CDU/CSU Erststimmen","CDU/CSU Zweitstimmen","GRUENE Erststimmen", "GRUENE Zweitstimmen","FDP Erststimmen","FDP Zweitstimmen","AfD Erststimmen","AfD Zweitstimmen","DIE LINKE Erststimmen","DIE LINKE Zweitstimmen", "BSW Erststimmen", "BSW Zweitstimmen")
+
+
+
+# sort based on the WKR number
+result2525 <- result2525[order(result2525$`Nr `),]
+result2521 <- result2521[order(result2521$`Nr `),]
+
+
+```
+
+```{r Data21}
 
 ### BTW21 ###
 
@@ -47,7 +148,7 @@ result2121 <- result2121[result2121[,3]!=99 & !is.na(result2121[,3]),]
 # keep only previous results and delete stat-level results
 result2117 <- btw21_raw[,is.na(first.second.votes21)|first.second.votes21=="aaa"]
 result2117 <- result2117[result2117[,3]!=99 & !is.na(result2117[,3]),]
-result2117 <- result2117[,1:ncol(result2121)] # what does this do to result2117? Does it insert result2121???
+result2117 <- result2117[,1:ncol(result2121)]
 
 # make labels
 main.labels21 <- main.labels21[!is.na(first.second.votes21)]
@@ -108,7 +209,7 @@ result2117 <- result2117[order(result2117$`Nr `),]
 
 ```
 
-```{r Daten}
+```{r Data17}
 ### BTW17 ###
 
 # read in results
@@ -192,7 +293,7 @@ result1713 <- result1713[order(result1713$`Nr `),]
 
 ```
 
-```{r Daten}
+```{r Data13}
 ### BTW13 ###
 
 # read in results # AFD eiinfügen
@@ -274,7 +375,7 @@ result1309 <- result1309[order(result1309$`Nr `),]
 
 ```
 
-```{r Daten}
+```{r Data09}
 ### BTW09 ###
 
 # read in results
@@ -358,7 +459,7 @@ result0905 <- result0905[order(result0905$`Nr `),]
 
 ```
 
-```{r Daten}
+```{r Data05}
 ### BTW05 ###
 
 # read in results
@@ -441,7 +542,7 @@ result0502 <- result0502[order(result0502$`Nr `),]
 
 ```
 
-```{r Daten}
+```{r Data02}
 ### BTW02 ###
 
 # read in results
@@ -511,14 +612,14 @@ result0202$Land <- result0202$Land -900
 ```
 
 
-## Poolen der einzelnen Datensätze pro Wahljahr
+## Pooling of individual datasets by election year
 
-Die gegenwärtige und vergangene Wahlergebnisse getrennt gepoolt.
+The current and previous election results are pooled separately.
 
 ```{r}
 library(plyr)
-data_now <- rbind.fill(result2121,result1717,result1313,result0909,result0505)
-data_then <- rbind.fill(result2117,result1713,result1309,result0905,result0502)
+data_now <- rbind.fill(result2525,result2121,result1717,result1313,result0909,result0505)
+data_then <- rbind.fill(result2521,result1713,result1309,result0905,result0502)
 
 ## Save data for subsequent analyses
 save(data_now, file = "Data/data_now.RData")
@@ -530,52 +631,21 @@ save(data_then, file = "Data/data_then.RData")
 # Add Time Dummy Variables
 
 ```{r}
-# Year dummy 2005
-data_now$d05 <- NA
-data_now$d05[data_now$Jahr == 2005] <- 1
-data_now$d05[data_now$Jahr %in% c(2009, 2013, 2017, 2021)] <- 0
+make_year_dummies <- function(df, var = "Jahr", prefix = "d") {
+  yrs <- sort(unique(df[[var]]))
+  for (y in yrs) {
+    df[[paste0(prefix, substr(y, 3, 4))]] <- as.integer(df[[var]] == y)  # d05, d09, d13, ...
+  }
+  df
+}
 
-data_then$d05 <- NA
-data_then$d05[data_then$Jahr == 2005] <- 1
-data_then$d05[data_then$Jahr %in% c(2009, 2013, 2017, 2021)] <- 0
+data_now  <- make_year_dummies(data_now)
+data_then <- make_year_dummies(data_then)
 
-# Year dummy 2009
-data_now$d09 <- NA
-data_now$d09[data_now$Jahr == 2009] <- 1
-data_now$d09[data_now$Jahr %in% c(2005, 2013, 2017, 2021)] <- 0
-
-data_then$d09 <- NA
-data_then$d09[data_then$Jahr == 2009] <- 1
-data_then$d09[data_then$Jahr %in% c(2005, 2013, 2017, 2021)] <- 0
-
-# Year dummy 2013
-data_now$d13 <- NA
-data_now$d13[data_now$Jahr == 2013] <- 1
-data_now$d13[data_now$Jahr %in% c(2005, 2009, 2017, 2021)] <- 0
-
-data_then$d13 <- NA
-data_then$d13[data_then$Jahr == 2013] <- 1
-data_then$d13[data_then$Jahr %in% c(2005, 2009, 2017, 2021)] <- 0
-
-# Year dummy 2017
-data_now$d17 <- NA
-data_now$d17[data_now$Jahr == 2017] <- 1
-data_now$d17[data_now$Jahr %in% c(2005, 2009, 2013, 2021)] <- 0
-
-data_then$d17 <- NA
-data_then$d17[data_then$Jahr == 2017] <- 1
-data_then$d17[data_then$Jahr %in% c(2005, 2009, 2013, 2021)] <- 0
-
-# Year dummy 2021
-data_now$d21 <- NA
-data_now$d21[data_now$Jahr == 2021] <- 1
-data_now$d21[data_now$Jahr %in% c(2005, 2009, 2013, 2017)] <- 0
-
-data_then$d21 <- NA
-data_then$d21[data_then$Jahr == 2021] <- 1
-data_then$d21[data_then$Jahr %in% c(2005, 2009, 2013, 2017)] <- 0
 ```
 
+
+# FROM HERE OLD - NEEDS UPDATE
 
 ## Matrix der Treatments
 
@@ -586,8 +656,8 @@ treat.raw <- treat.raw[!is.na(treat.raw$Jahr),]
 treat.raw <- treat.raw[!is.na(treat.raw$Partei2),]
 
 all.years <- c(2021,2017,2013,2009,2005,2002)
-all.parties <- c("CDU/CSU","SPD","AfD","FDP","Die Linke","Bündnis 90/Die Grünen")
-all.parties2 <- c("CDU/CSU","SPD","AfD","FDP","DIE LINKE","GRUENE")
+all.parties <- c("CDU/CSU","SPD","AfD","FDP","Die Linke","Bündnis 90/Die Grünen", "BSW")
+all.parties2 <- c("CDU/CSU","SPD","AfD","FDP","DIE LINKE","GRUENE", "BSW")
 all.states <- c("SH","HH","NI","HB","NRW","HE","RP","BW","BY","SL","B","BB","MV","SN","SA","TH")
 
 data_treat <- data_now # create a treatment matrix
@@ -754,7 +824,7 @@ Wahlkreiszuordnung für fixed-effect models
 ```{r}
 wkr.assignment <- read_xlsx("Data/data_now_WK_Einteilung.xlsx",sheet=6)
 
-wkr.assignment <- wkr.assignment[,paste0("Nr.",c("21","17","13","09","05","02"))]
+wkr.assignment <- wkr.assignment[,paste0("Nr.",c("25","21","17","13","09","05","02"))]
 wkr.assignment <- as.matrix(wkr.assignment)
 
 
