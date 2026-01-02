@@ -1,0 +1,457 @@
+---
+title: "Fixed effects and Random effects"
+author: "Anna Werner & Susumu Shikano"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+
+```{r , include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Load data
+
+```{r}
+load("Data/analysis_dat.RData")
+```
+
+
+## Switch for party selection and spill over
+
+```{r}
+party.selec.switch <- 1
+spill.over.switch <- 0 # 1: with spill over
+turnout.switch <- 0 # 1: turnout analysis
+```
+
+See below what value corresponds to what party selection.
+
+```{r}
+# OLD !!!
+
+#if (party.selec.switch==1) party.selection <- c(1:6)      # S A F L G 
+#if (party.selec.switch==2) party.selection <- c(1:2,6)      # nur C und S + G (2021)
+#if (party.selec.switch==3) party.selection <- c(3:6)      # ohne C und S und G (2021)
+#if (party.selec.switch==4) party.selection <- c(2:6)      # ohne C
+#if (party.selec.switch==5) party.selection <- c(1,3:6)    # ohne S
+#if (party.selec.switch==6) party.selection <- c(1:3,5:6) # ohne F
+#if (party.selec.switch==7) party.selection <- c(1:4,6)    # ohne Linke
+#if (party.selec.switch==8) party.selection <- c(1:5)     # ohne G
+#if (party.selec.switch==9) party.selection <- c(1:2,4:6)  # ohne AfD
+#if (party.selec.switch==10) party.selection <- c(2,4:6)    # ohne C und A
+#if (party.selec.switch==11) party.selection <- c(3:4,6)    # ohne C, S und L
+
+
+## Do not select only one party. This won't work!
+## Party positions: 1=SPD, 2=CDU/CSU, 3=GRUENE, 4=FDP, 5=AfD, 6=DIE LINKE, 7=BSW
+
+if (party.selec.switch==1) party.selection <- c(1:7)       # All parties: S C G F A L B
+if (party.selec.switch==2) party.selection <- c(1:2,3)     # SPD, CDU/CSU, GRUENE
+if (party.selec.switch==3) party.selection <- c(4:7)       # FDP, AfD, DIE LINKE, BSW (without SPD, CDU/CSU, GRUENE)
+if (party.selec.switch==4) party.selection <- c(1,3:7)     # Without CDU/CSU
+if (party.selec.switch==5) party.selection <- c(2:7)       # Without SPD
+if (party.selec.switch==6) party.selection <- c(1:3,5:7)   # Without FDP
+if (party.selec.switch==7) party.selection <- c(1:5,7)     # Without DIE LINKE
+if (party.selec.switch==8) party.selection <- c(1:2,4:7)   # Without GRUENE
+if (party.selec.switch==9) party.selection <- c(1:4,6:7)   # Without AfD
+if (party.selec.switch==10) party.selection <- c(1,3:7)    # Without CDU/CSU
+if (party.selec.switch==11) party.selection <- c(2:4,6:7)  # Without SPD and DIE LINKE
+if (party.selec.switch==12) party.selection <- c(1:6)      # Without BSW (traditional parties only)
+```
+
+
+```{r}
+all.abs.votes <- all.abs.votes[,party.selection,,,]
+all.treat <- all.treat[,party.selection,,]
+
+```
+
+
+## Switch for denominator to compute the vote share
+
+  1: eligible citizens (for turnout in analysis, this option has to be selected.)
+  2: all voters
+  3: all valid votes 
+
+```{r}
+
+vote.denom <- 1
+
+```
+
+### Election results
+
+We first compute the relative vote shares: 
+
+```{r}
+
+  all.rel.votes <-  all.abs.votes/all.abs.total[,rep(vote.denom,length(party.selection)),,,] 
+  # If one uses valid votes: rep(3,6)
+  # If one uses all voters: rep(2,6)
+  # If one uses all eligible citizens: rep(1,6)
+
+  # We delete the past results
+  all.rel.votes <- all.rel.votes[,,,,1]
+
+```
+
+
+
+### Treatment
+
+```{r}
+
+all.treat.dummy <- all.treat
+all.treat.dummy[all.treat.dummy>0] <- 1
+
+table(all.treat.dummy)
+
+
+
+```
+
+## index array
+
+Year index
+
+```{r}
+year.index <- all.treat.dummy
+
+year.index[, , , 1] <- 2025
+year.index[, , , 2] <- 2021
+year.index[, , , 3] <- 2017
+year.index[, , , 4] <- 2013
+year.index[, , , 5] <- 2009
+year.index[, , , 6] <- 2005
+year.index[, , , 7] <- 2002
+# 
+table(year.index)
+
+```
+
+Party index
+
+```{r}
+party.index <- all.treat.dummy
+
+party.labels <- c("SPD", "CDU", "GRU", "FDP", "AFD", "LIN", "BSW")[party.selection] # OLD: c("CDU","SPD","AFD","FDP","LIN","GRU")
+for (i.party in 1:length(party.selection)){
+  party.index[,i.party,,] <- party.labels[i.party]
+}
+
+table(party.index)
+```
+
+Modification of Wahlkreis index array
+
+```{r}
+all.wkr.index <- all.wkr.index[,party.selection,,] # Wenever adjust for the retraced WK boundaries?
+
+```
+
+
+### Special treatment of Greens (2021)
+
+```{r}
+print(paste("Number of non-missings",sum(is.na(all.rel.votes))))
+if (party.selec.switch==2) {
+  all.rel.votes[party.index=="GRU" & year.index<2017] <- NA
+}
+if (party.selec.switch==3) {
+  all.rel.votes[party.index=="GRU" & year.index==2021] <- NA
+}
+
+print(paste("Number of non-missings after making Baerbock as KK",sum(is.na(all.rel.votes))))
+
+
+```
+
+
+# Fixed effect models
+
+```{r}
+library(lmtest)
+library(sandwich)
+
+for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
+
+  all.results <- vector("list",6) # empty list to store the results
+
+  votes.in.array <- all.rel.votes[,,i.smdpr,1:6]
+  votes <- c(all.rel.votes[,,i.smdpr,1:6] )
+  last.votes <- c(all.rel.votes[,,i.smdpr,2:7] )
+  treat <- c(all.treat.dummy[,,i.smdpr,1:6] )
+  year  <- as.factor(c(year.index[,,i.smdpr,1:6] ))
+  year <- relevel(year,ref="2005") # Why 2005?
+  party <- factor(c(party.index[, , i.smdpr, 1:6]),
+                  levels = c("SPD", "CDU", "GRU", "FDP", "AFD", "LIN", "BSW")) # Fixed order and added BSW
+  party <- relevel(party, ref = "CDU")
+  district <- as.factor(c(all.wkr.index[,,i.smdpr,1:6]))
+  cross.treat <- c(all.treat.dummy[,,c(2,1)[i.smdpr],1:6] )
+
+  lm.dat <- as.data.frame(votes)
+  lm.dat <- cbind(lm.dat,treat,cross.treat,last.votes,year,party,district)
+  
+  print(paste("Number of observations: ",nrow(na.omit(lm.dat))))
+  
+  print("Number of observations per party: ")
+  print(table(na.omit(lm.dat)$party))
+  
+  
+  ## Model with year and party fixed effects.
+  print(c("Erststimme (H1a)","Zweitstimme  (H1b)")[i.smdpr])
+  options(max.print=100)
+  print(summary(lm.fe1 <- lm(votes ~ treat + last.votes+
+                               party * year + district*party )))
+
+  print(c("Robust standard error"))
+  r.se.fe1 <- sqrt(diag(vcovHC(lm.fe1, type = 'HC')))
+  print(coef.fe1 <- coeftest(lm.fe1, vcov = vcovHC(lm.fe1, type = 'HC')))
+
+  all.results[[6]] <- lm.fe1
+  
+  
+  ## Model with cross treatment (contamination)
+
+  print(c("Contamination Erststimme (H2b)","Contamination Zweitstimme  (H2a)")[i.smdpr])
+  print(summary(lm.fe2 <- lm(votes~ treat + cross.treat + 
+                               last.votes + party * year + district * party)))
+  
+  print(c("Robust standard error"))
+  r.se.fe2 <- sqrt(diag(vcovHC(lm.fe2, type = 'HC')))
+  print(lm.fe2.robust <- coeftest(lm.fe2, vcov = vcovHC(lm.fe2, type = 'HC')))
+  
+  
+  all.results[[1]] <- lm.fe2
+  all.results[[2]] <- lm.fe2.robust
+  
+  all.results[[3]] <- lm.dat
+  all.results[[4]] <- votes.in.array
+  
+  all.results[[5]] <- r.se.fe2
+  
+  if (i.smdpr==1) all.results.smd <- all.results
+  if (i.smdpr==2) all.results.pr <- all.results
+}
+
+save(all.results.smd,
+     all.results.pr,
+ file=paste0("Data/Estimation_Results_FE_RE_PSelect",party.selec.switch,
+              "_denom",vote.denom,".RData")
+              )
+
+options(max.print=10000)
+```
+
+## Some diagnostic checks
+
+
+Checking residuals
+
+```{r}
+
+results.te <- all.results.smd[[1]] # nur für Erststimme? 
+
+#plot(results.te)
+
+
+data.te <- all.results.smd[[3]]
+
+data.te <- data.te[!is.na(data.te$votes)&!is.na(data.te$last.votes),]
+dim(data.te)
+
+
+residuals <- residuals(results.te)
+predicted <- predict(results.te)
+
+length(residuals)
+
+
+plot(residuals ~ data.te$treat)
+tapply(residuals , as.factor( data.te$treat),mean)
+
+
+
+```
+
+### Plotting the actual votes, predicted votes and residuals for treated district
+
+```{r}
+par(mfrow=c(1,2)) 
+
+plot(data.te$votes[data.te$treat==1] ~ predicted[data.te$treat==1],
+     xlab="Predicted",ylab="Actual")
+abline(coef=c(0,1),lty=2)
+labels <- data.te[data.te$treat==1,3:5]
+
+text( predicted[data.te$treat==1],data.te$votes[data.te$treat==1] ,
+     rownames(data.te)[data.te$treat==1],
+     pos=1,cex=0.7)
+
+summary(lm.rsd <- lm(residuals[data.te$treat==1] ~ predicted[data.te$treat==1]))
+plot(residuals[data.te$treat==1] ~ predicted[data.te$treat==1],
+     xlab="Predicted",ylab="Rersiduals")
+abline(lm.rsd)
+
+labels <- data.te[data.te$treat==1,3:5]
+
+text( predicted[data.te$treat==1],residuals[data.te$treat==1] ,
+     rownames(data.te)[data.te$treat==1],
+     pos=1,cex=0.7)
+
+
+labels
+
+```
+
+
+```{r}
+
+wkr.fe <- coefficients(results.te)
+wkr.fe <- wkr.fe[grep("district",names(wkr.fe))]
+
+hist(wkr.fe)
+
+wkr.fe[order(wkr.fe)][1:5]
+
+wkr.fe[order(wkr.fe,decreasing=TRUE)][1:5]
+
+```
+
+
+### Diagnostics I: Serial correlated errors
+
+We regress u_t on u_t-1. If the effect is significant, there are serially correlated errors.
+
+Note: We first have to assign individual districts at t to those at t-1.
+
+```{r}
+
+for (i.smdpr in 1:2){
+  if (i.smdpr==1){
+    to.be.tested <- all.results.smd[[1]]  # Diagnostics for the model Erststimme
+    temp.dat <- all.results.smd[[3]]
+    temp.depv <- all.results.smd[[4]]
+
+  }else{
+    to.be.tested <- all.results.pr[[1]] # Diagnostics for the model Zweitstimme
+    temp.dat <- all.results.pr[[3]]
+    temp.depv <- all.results.pr[[4]]
+  }
+  
+
+residuals <- residuals(to.be.tested)
+residuals <- array(residuals,dim=dim(temp.depv))
+
+simple.district.idx <- all.wkr.index[,1,1,]
+
+# stacking residuals at t and t-1
+## loop from BTW 2021 to 2009
+
+current.resid <- past.resid <- residuals[,,1:4]
+for (i.btw in 1:4){
+  # create the key to match the current and past districts
+  key <- match(simple.district.idx[,i.btw],simple.district.idx[,i.btw+1])
+  past.resid[,,i.btw] <- residuals[key,,i.btw+1]
+}
+
+print(c("Erststimme","Zweitstimme")[i.smdpr])
+print(
+   summary(lm.out <- lm(c(current.resid) ~ c(past.resid)))
+)
+plot(c(current.resid) ~ c(past.resid),
+     ylab="t",xlab="t-1")
+abline(lm.out)
+
+}
+
+```
+
+
+### Exogeneity
+
+```{r}
+# Wooldridge's test
+
+options(max.print=100)
+# District candidacy: Treatment for SMD
+ 
+dep.var <- c(all.rel.votes[,,1,2:5])
+lagged.dv <- c(all.rel.votes[,,1,3:6])
+treat <- c(all.rel.votes[,,1,2:5])
+treat.t1 <- c(all.rel.votes[,,1,1:4])
+cross.treat <- c(all.rel.votes[,,2,2:5])
+cross.treat.t1 <- c(all.rel.votes[,,2,1:4])
+
+party.fe <- factor(c(party.index[,,1,2:5]),
+                   levels=c("CDU","SPD","AFD","FDP","LIN","GRU"))
+wkr.fe <- as.factor(c(all.wkr.index[,,1,2:5]))
+
+year.fe  <- as.factor(c(year.index[,,1,1:4] ))
+
+summary(lm.out <- lm(dep.var ~ lagged.dv +
+             treat + treat.t1+
+             cross.treat + cross.treat.t1+
+             year.fe*party.fe + party.fe*wkr.fe))
+
+ print(c("Robust standard error"))
+  r.se <- sqrt(diag(vcovHC(lm.out, type = 'HC')))
+  print(lm.out.robust <- coeftest(lm.out, vcov = vcovHC(lm.out, type = 'HC')))
+
+all.results.smd <- vector("list",3)
+all.results.smd[[1]] <- lm.out
+all.results.smd[[2]] <- lm.out.robust
+all.results.smd[[3]] <- c("empty")
+all.results.smd[[4]] <- c("empty")
+all.results.smd[[5]] <- r.se
+
+
+# PR list candidacy: Treatment for PR
+ 
+all.results <- vector("list",3)
+
+dep.var <- c(all.rel.votes[,,2,2:5])
+lagged.dv <- c(all.rel.votes[,,2,3:6])
+treat <- c(all.rel.votes[,,2,2:5])
+treat.t1 <- c(all.rel.votes[,,2,1:4])
+cross.treat <- c(all.rel.votes[,,1,2:5])
+cross.treat.t1 <- c(all.rel.votes[,,1,1:4])
+
+party.fe <- factor(c(party.index[,,2,2:5]),
+                   levels=c("CDU","SPD","AFD","FDP","LIN","GRU"))
+wkr.fe <- as.factor(c(all.wkr.index[,,2,2:5]))
+
+year.fe  <- as.factor(c(year.index[,,2,1:4] ))
+
+summary(lm.out <- lm(dep.var ~ lagged.dv +
+             treat + treat.t1+
+             cross.treat + cross.treat.t1+
+             year.fe*party.fe + party.fe*wkr.fe))
+
+print(c("Robust standard error"))
+  r.se <- sqrt(diag(vcovHC(lm.out, type = 'HC')))
+  print(lm.out.robust <- coeftest(lm.out, vcov = vcovHC(lm.out, type = 'HC')))
+
+  
+all.results.pr <- vector("list",3)
+all.results.pr[[1]] <- lm.out
+all.results.pr[[2]] <- lm.out.robust
+all.results.pr[[3]] <- c("empty")
+all.results.pr[[4]] <- c("empty")
+all.results.pr[[5]] <- r.se
+
+
+save(all.results.smd,
+     all.results.pr,
+ file=(paste0("Data/Exogeneity_Results_FE_PSelect",party.selec.switch,
+              "_denom",vote.denom,
+                ".RData")))
+
+options(max.print=10000)
+
+```
+
+
+
