@@ -649,7 +649,7 @@ data_then <- make_year_dummies(data_then)
 
 ```
 
-## Matrix der Treatments
+## Treatment Matrix
 
 ```{r}
 library(readxl)
@@ -927,22 +927,22 @@ lines.header <- c(2,2,3,1,1,1,1)
 to.skip.data <- c(5,5,7,6,9,9,10)
 
 
-for (i in 1:length(file.names)){
-  
-  temp.header <- read.csv(paste0("BTW_Strukturdaten/",file.names[i]),
-                                 skip=to.skip.header[i], 
-                                 #nrows=lines.header[i],
-                                 nrows=1,
-                                 header=F,sep=";")
-  
-  
-   temp.dat <- read.csv(paste0("BTW_Strukturdaten/",file.names[i]),
-                                 skip=to.skip.data[i], header=F,
-                                 sep=";")
-  
-  colnames(temp.dat) <- temp.header
-  list.struktur[[i]] <- temp.dat
-}
+#for (i in 1:length(file.names)){
+#  
+#  temp.header <- read.csv(paste0("BTW_Strukturdaten/",file.names[i]),
+#                                 skip=to.skip.header[i], 
+#                                 #nrows=lines.header[i],
+#                                 nrows=1,
+#                                 header=F,sep=";")
+#  
+#  
+#   temp.dat <- read.csv(paste0("BTW_Strukturdaten/",file.names[i]),
+#                                 skip=to.skip.data[i], header=F,
+#                                 sep=";")
+#  
+#  colnames(temp.dat) <- temp.header
+#  list.struktur[[i]] <- temp.dat
+#}
 
 
 ```
