@@ -48,7 +48,7 @@ See below what value corresponds to what party selection.
 ## Party positions: 1=SPD, 2=CDU/CSU, 3=GRUENE, 4=FDP, 5=AfD, 6=DIE LINKE, 7=BSW
 
 if (party.selec.switch==1) party.selection <- c(1:7)       # All parties: S C G F A L B
-if (party.selec.switch==2) party.selection <- c(1:2,3)     # SPD, CDU/CSU, GRUENE
+if (party.selec.switch==2) party.selection <- c(1:3)     # SPD, CDU/CSU, GRUENE
 if (party.selec.switch==3) party.selection <- c(4:7)       # FDP, AfD, DIE LINKE, BSW (without SPD, CDU/CSU, GRUENE)
 if (party.selec.switch==4) party.selection <- c(1,3:7)     # Without CDU/CSU
 if (party.selec.switch==5) party.selection <- c(2:7)       # Without SPD
@@ -126,7 +126,7 @@ year.index[, , , 4] <- 2013
 year.index[, , , 5] <- 2009
 year.index[, , , 6] <- 2005
 year.index[, , , 7] <- 2002
-# 
+
 table(year.index)
 
 ```
@@ -147,7 +147,7 @@ table(party.index)
 Modification of Wahlkreis index array
 
 ```{r}
-all.wkr.index <- all.wkr.index[,party.selection,,] # Wenever adjust for the retraced WK boundaries?
+all.wkr.index <- all.wkr.index[,party.selection,,]
 
 ```
 

@@ -26,7 +26,7 @@ save.outputs <- 1
 ## Switch for party selection and spill over
  
 ```{r}
-party.selec.switch <- 1
+party.selec.switch <- 9
 spill.over.switch <- 0 # 1: with spill over
 turnout.switch <- 0 # 1: turnout analysis
 ```
@@ -584,7 +584,7 @@ for (i.smdpr in 1:2){  # Loop over Erst- and Zweitstimme
 
 save(all.results.t1.smd,
      all.results.t1.pr,
-     file = paste0("Data/Estimation_Results_25/Exogeneity/Exogeneity_Results_PSelect", 
+     file = paste0("Data/Estimation_Results_25/First_Differencing/Exogeneity_Results_PSelect", 
                    party.selec.switch,
                    "_denom", vote.denom,
                    c("", "_spillover")[spill.over.switch + 1],
