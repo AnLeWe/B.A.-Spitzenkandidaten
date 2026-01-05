@@ -653,7 +653,7 @@ data_then <- make_year_dummies(data_then)
 
 ```{r}
 library(readxl)
-treat.raw <- read_xlsx("Data/Treatment_WK_25.xlsx",sheet=2)
+treat.raw <- read_xlsx("Data/Treatment_WK.xlsx",sheet=2)
 treat.raw <- treat.raw[!is.na(treat.raw$Jahr),]
 treat.raw <- treat.raw[!is.na(treat.raw$Partei2),]
 
@@ -686,7 +686,7 @@ print(unique(data_treat$Land))  # Should only show 1-16
 
 for (i in 1:nrow(treat.raw)){
   
-  # Nur die Zeilen für die BTW, die wir berücksichtigen wollen
+  # Only rows for BTW we want to include
   if (as.numeric(treat.raw$Jahr[i]) %in% all.years){
    
     # identify which federal election
@@ -703,7 +703,7 @@ for (i in 1:nrow(treat.raw)){
     treat.land <- as.numeric(treat.raw$T_LP[i]) # e.g. row2: 5, KK who was there before as non KK
     ## From here replacing values in the treatment matrix
     
-    # District (only in the case when the leader run for a district)
+    # District (only in the case when the leader ran for a district)
     if (!is.na(which.wkr)){
       data_treat[data_treat$Jahr==which.year & data_treat$Nr==which.wkr,
                  grep(all.parties2[which.party],names(data_treat))[1] ] <- treat.wkr
@@ -728,6 +728,10 @@ treatment_assigned <- sapply(all.years, function(yr) {
 })
 print(treatment_assigned)
 ```
+```{r}
+data_treat[data_treat$Jahr == 2021 & data_treat$Nr == 61]
+```
+
 
 ## All Objects in the Array
 
