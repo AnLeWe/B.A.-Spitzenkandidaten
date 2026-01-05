@@ -20,13 +20,13 @@ load("Data/analysis_dat.RData")
 
 ```{r}
 # save ouputs
-save.outputs <- 1
+save.outputs <- 0
 ```
 
 ## Switch for party selection and spill over
  
 ```{r}
-party.selec.switch <- 9
+party.selec.switch <- 12
 spill.over.switch <- 0 # 1: with spill over
 turnout.switch <- 0 # 1: turnout analysis
 ```
@@ -53,8 +53,8 @@ See below what value corresponds to what party selection.
 ## Party positions: 1=SPD, 2=CDU/CSU, 3=GRUENE, 4=FDP, 5=AfD, 6=DIE LINKE, 7=BSW
 
 if (party.selec.switch==1) party.selection <- c(1:7)       # All parties: S C G F A L B
-if (party.selec.switch==2) party.selection <- c(1:2,3)     # SPD, CDU/CSU, GRUENE
-if (party.selec.switch==3) party.selection <- c(4:7)       # FDP, AfD, DIE LINKE, BSW (without SPD, CDU/CSU, GRUENE)
+if (party.selec.switch==2) party.selection <- c(1:3)       # SPD, CDU/CSU, GRUENE (in 21, 25 only)
+if (party.selec.switch==3) party.selection <- c(4:7)       # FDP, AfD, DIE LINKE, BSW , G (without SPD, CDU/CSU, GRUENE (in 21, 25))
 if (party.selec.switch==4) party.selection <- c(1,3:7)     # Without CDU/CSU
 if (party.selec.switch==5) party.selection <- c(2:7)       # Without SPD
 if (party.selec.switch==6) party.selection <- c(1:3,5:7)   # Without FDP
@@ -71,7 +71,7 @@ Reading adjacent matrix
 ```{r}
 if (spill.over.switch>0){
   load("Data/btw_all_shape.RData")
-  all.nb.mat <- all.nb.mat[3:7] # <- update with new dat???
+  all.nb.mat <- all.nb.mat[3:8]
 }
 
 ```
@@ -99,6 +99,13 @@ all.abs.votes has 5 dimensions:
 * **Year** (1 … 7): 2025, 2021, 2017, 2013, 2009, 2005, 2002
 * **Current or previous results** (1, 2)
 
+all.total has 5 dimensions:
+* **Constituencies** (1 … 299)
+* **Eligible voters, turnout, or valid votes** (1 … 3)
+* **First or second vote** (1, 2)
+* **Year** (1 … 7): 2025, 2021, 2017, 2013, 2009, 2005, 2002
+* **Current or previous results** (1, 2)
+
 all.treat has 4 dimensions:
 * **Constituencies** (1 … 299)
 * **Parties** (1 … 7): S C G F A L B
@@ -106,18 +113,23 @@ all.treat has 4 dimensions:
 * **Year** (1 … 7): 2025, 2021, 2017, 2013, 2009, 2005, 2002
 
 ```{r}
-# UPDATE for new year
-if (turnout.switch==0){
-  all.abs.votes <- all.abs.votes[,party.selection,,,]
-  all.treat     <- all.treat[,party.selection,,]
-  all.rel.votes <-  all.abs.votes/
-  all.abs.total[,rep(vote.denom,length(party.selection)),,,,drop=F] 
-}else{
-  all.abs.votes <- all.abs.total[,2,,,,drop=F] 
-  all.treat     <- all.treat[,party.selection,,]
-  temp <- apply(all.treat,c(1,3,4),max)
-  all.treat <- array(temp,dim=c(299,1,2,6))    
-  all.rel.votes <-  all.abs.votes/all.abs.total[,rep(vote.denom,1),,,,drop=F] 
+if (turnout.switch == 0){
+  # Normal case: analyzing vote shares by party
+  all.abs.votes <- all.abs.votes[, party.selection, , , ]
+  all.treat     <- all.treat[, party.selection, , ]
+  all.rel.votes <- all.abs.votes /
+    all.abs.total[, rep(vote.denom, length(party.selection)), , , , drop=FALSE] 
+} else {
+  # Turnout analysis: treating turnout as the dependent variable
+  all.abs.votes <- all.abs.total[, 2, , , , drop=FALSE]  # Waehlende (turnout)
+  all.treat     <- all.treat[, party.selection, , ]
+  
+  # Collapse treatment: if any party leader ran, treatment = 1
+  temp <- apply(all.treat, c(1, 3, 4), max)
+  all.treat <- array(temp, dim=c(299, 1, 2, 7))
+  
+  all.rel.votes <- all.abs.votes / 
+    all.abs.total[, rep(vote.denom, 1), , , , drop=FALSE] 
 }
 
 ```
@@ -172,15 +184,15 @@ apply(all.treat.incumb, 3, table)
 if (turnout.switch == 0){
   all.treat.dummy.fd <- 
   all.treat.incumb.fd <- 
-      array(NA, dim = c(299, length(party.selection), 2, 6))  # Changed from 5 to 6
+      array(NA, dim = c(299, length(party.selection), 2, 6))
 } else {
   all.treat.dummy.fd <- 
   all.treat.incumb.fd <- 
-      array(NA, dim = c(299, 1, 2, 6))  # Changed from 5 to 6
+      array(NA, dim = c(299, 1, 2, 6))
 }
 
 # Compute first differences for treatments
-for (i.time in 1:6){  # Changed from 1:5 to 1:6
+for (i.time in 1:6){
   all.treat.dummy.fd[, , , i.time] <-  
     all.treat.dummy[, , , i.time] - all.treat.dummy[, , , i.time + 1] 
   all.treat.incumb.fd[, , , i.time] <-  
@@ -198,7 +210,7 @@ The resulting all.treat.dummy.fd has:
 - 299 districts
 - 7 parties
 - 2 tiers
-- 6 timepoints
+- 6 time points
 
 
 Incorporating spill-over treatment
@@ -206,9 +218,9 @@ Incorporating spill-over treatment
 ```{r}
 if (spill.over.switch > 0){
   for (i.tier in 1:2){
-    for (i.btw in 1:6){  # Changed from 1:5 to 1:6
+    for (i.btw in 1:6){
       temp.treat <- all.treat.dummy.fd[, , i.tier, i.btw]
-      temp.mat <- as.matrix(all.nb.mat[[7 - i.btw]])  # Changed from 6-i.btw to 7-i.btw
+      temp.mat <- as.matrix(all.nb.mat[[7 - i.btw]]) # 7-1=6: 2025
       diag(temp.mat) <- 1  # replace the diagonal elements with 1
       spill.treat <- temp.mat %*% temp.treat
       spill.treat[spill.treat > 0] <- 1
@@ -260,14 +272,16 @@ if (turnout.switch == 0){
 table(party.index)
 ```
 
-### Special treatment of Greens (2021)
+### Special treatment of Greens (2021, 2025)
 
 ```{r}
 if (party.selec.switch==2) {
-  all.rel.votes.fd[party.index=="GRU" & year.index!=2021] <- NA
+  # Keep only 2021+
+  all.rel.votes.fd[party.index=="GRU" & year.index < 2021] <- NA
 }
 if (party.selec.switch==3) {
-  all.rel.votes.fd[party.index=="GRU" & year.index==2021] <- NA
+  # Keep only pre-2021 (2017 and earlier)
+  all.rel.votes.fd[party.index=="GRU" & year.index >= 2021] <- NA
 }
 
 ```
@@ -284,19 +298,19 @@ library(lmtest)
 # Optionally: previousl we used HC SEs. But those may not adequately deal with the autocorrelation.
 # Why not clustered SEs by constituency? Uncomment that option, and comment out the HC approach, if wanted.
 
-for (i.smdpr in 1:2){  # Loop over Erst- and Zweitstimme
-  all.results <- vector("list", 5)  # empty list to store the results
+for (i.smdpr in 1:2){  # first/second vote
+  all.results <- vector("list", 5)  # list for results
   votes.in.array <- all.rel.votes.fd[, , i.smdpr, ]
   votes <- c(all.rel.votes.fd[, , i.smdpr, ])
   treat <- c(all.treat.dummy.fd[, , i.smdpr, ])
   treat.incumb <- c(all.treat.incumb.fd[, , i.smdpr, ])
   year  <- as.factor(c(year.index[, , i.smdpr, ]))
-  year <- relevel(year, ref = "2009")  # Changed from "2005" to "2009" (middle year)
+  year <- relevel(year, ref = "2005")  # Change to middle year?
   
   # Party order: SPD, CDU, GRUENE, FDP, AfD, DIE LINKE, BSW
   party <- factor(c(party.index[, , i.smdpr, ]),
                   levels = c("SPD", "CDU", "GRU", "FDP", "AFD", "LIN", "BSW", "Turnout"))
-  party <- relevel(party, ref = "AFD")
+  party <- relevel(party, ref = "CDU") #prev: AFD
   
   cross.treat <- c(all.treat.dummy.fd[, , c(2,1)[i.smdpr], ])
   cross.treat.incumb <- c(all.treat.incumb.fd[, , c(2,1)[i.smdpr], ])
@@ -308,7 +322,12 @@ for (i.smdpr in 1:2){  # Loop over Erst- and Zweitstimme
   lm.dat <- as.data.frame(lm.dat)
   lm.dat$year <- year
   lm.dat$party <- party
-  lm.dat$constituency <- constituency  # NEW: Add constituency ID
+  #lm.dat$constituency <- constituency  # NEW: Add constituency ID
+  #or??
+  #constituency <- c(all.wkr.index[, , i.smdpr, 1:6])
+  
+  # *** ADD THIS LINE TO EXCLUDE 2025 ***
+  lm.dat <- lm.dat[lm.dat$year != 2025, ]
   lm.dat <- na.omit(lm.dat)
   
   ## Model 
@@ -377,10 +396,10 @@ if (save.outputs == 1) {
 
 ```{r}
 # Residuals vs Fitted
-plot(lm.out, which = 1)  # Should show random scatter if homoskedastic
+plot(lm.out, which = 1)
 
 # Scale-Location plot
-plot(lm.out, which = 3)  # Should show horizontal line if homoskedastic
+plot(lm.out, which = 3)
 
 # Studentized residuals
 plot(studres(lm.out) ~ fitted(lm.out),
