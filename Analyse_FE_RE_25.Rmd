@@ -71,9 +71,9 @@ all.treat <- all.treat[,party.selection,,]
 
 ## Switch for denominator to compute the vote share
 
-  1: eligible citizens (for turnout in analysis, this option has to be selected.)
-  2: all voters
-  3: all valid votes 
+1: eligible citizens (for turnout in analysis, this option has to be selected.)
+2: all voters
+3: all valid votes 
 
 ```{r}
 
@@ -157,10 +157,12 @@ all.wkr.index <- all.wkr.index[,party.selection,,]
 ```{r}
 print(paste("Number of non-missings",sum(is.na(all.rel.votes))))
 if (party.selec.switch==2) {
-  all.rel.votes[party.index=="GRU" & year.index<2017] <- NA
+  # Keep only 2021+
+  all.rel.votes[party.index=="GRU" & year.index < 2021] <- NA
 }
 if (party.selec.switch==3) {
-  all.rel.votes[party.index=="GRU" & year.index==2021] <- NA
+  # Keep only pre-2021 (2017 and earlier)
+  all.rel.votes[party.index=="GRU" & year.index >= 2021] <- NA
 }
 
 print(paste("Number of non-missings after making Baerbock as KK",sum(is.na(all.rel.votes))))
@@ -175,9 +177,9 @@ print(paste("Number of non-missings after making Baerbock as KK",sum(is.na(all.r
 library(lmtest)
 library(sandwich)
 
-for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
+for (i.smdpr in 1:2){ # first/second vote
 
-  all.results <- vector("list",6) # empty list to store the results
+  all.results <- vector("list",6) # empty for results
 
   votes.in.array <- all.rel.votes[,,i.smdpr,1:6]
   votes <- c(all.rel.votes[,,i.smdpr,1:6] )
@@ -275,6 +277,8 @@ tapply(residuals , as.factor( data.te$treat),mean)
 
 
 ```
+
+## Probably needs UPDATE FROM HERE
 
 ### Plotting the actual votes, predicted votes and residuals for treated district
 
