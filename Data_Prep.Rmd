@@ -603,9 +603,9 @@ colnames(result0202)[12:13] <- c("CDU/CSU Erststimmen","CDU/CSU Zweitstimmen")
 # sort based on the WKR number
 result0202 <- result0202[order(result0202$Nr),]
 
-# Recode WKR nummer
-result0202$Land <- result0202$Land -900
-
+# Recode and drop
+result0202$Land <- result0202$`Land ` - 900
+result0202 <- result0202[, names(result0202) != "Land "]  # Drop column with space
 
 
 ```
@@ -663,26 +663,14 @@ all.parties2 <- c("CDU/CSU","SPD","AfD","FDP","DIE LINKE","GRUENE", "BSW")
 all.states <- c("SH","HH","NI","HB","NRW","HE","RP","BW","BY","SL","B","BB","MV","SN","SA","TH")
 
 data_treat <- data_now # create a treatment matrix
-colnames(result0202)[c(1:5)] <- colnames(data_now)[c(1:4,6)]
-colnames(result0202)[c(18,19)] <- colnames(data_now)[c(20,21)]
-result0202 <- result0202[,-21]
+colnames(result0202)[c(1:2,3:4)] <- colnames(data_now)[c(1:2,4,6)]
+colnames(result0202)[c(17,18)] <- colnames(data_now)[c(22,23)]
 
 result0202[setdiff(names(data_now), names(result0202))] <- NA # adds empty cols for eligible/turnout 2nd
-data_treat <- rbind(data_treat,result0202) # a full dataframe with results from 2002 to 2025
+data_treat <- rbind(data_treat,result0202) # full df with results from 2002 to 2025
 
-data_treat[,grep("Erststimmen",names(data_treat))] <- 0 # empty cols
+data_treat[,grep("Erststimmen",names(data_treat))] <- 0 
 data_treat[,grep("Zweitstimmen",names(data_treat))] <- 0
-
-# NEW 27.12.2025
-unique(data_treat$Land)
-#[1]   1  13   2   3   4  12  15  11   5  14   6  16   7   9
-#[15]   8  10 901 913 902 903 904 912 915 911 905 914 906 916
-#[29] 907 909 908 910
-# => 2002 has different country coding!!
-data_treat$Land <- ifelse(data_treat$Land > 900, 
-                          data_treat$Land - 900, 
-                          data_treat$Land)
-print(unique(data_treat$Land))  # Should only show 1-16
 
 for (i in 1:nrow(treat.raw)){
   
@@ -704,13 +692,13 @@ for (i in 1:nrow(treat.raw)){
     ## From here replacing values in the treatment matrix
     
     # District (only in the case when the leader ran for a district)
-    if (!is.na(which.wkr)){
+    if (!is.na(which.wkr) && which.wkr > 0){
       data_treat[data_treat$Jahr==which.year & data_treat$Nr==which.wkr,
                  grep(all.parties2[which.party],names(data_treat))[1] ] <- treat.wkr
     }
     
     # Party list 
-    if (length(which.land)>0){ # only in case when the state was identified
+    if (length(which.land)> 0){ # only in case when the state was identified
       data_treat[data_treat$Jahr==which.year & data_treat$Land==which.land,
                  grep(all.parties2[which.party],names(data_treat))[2]] <- treat.land
     }
@@ -719,6 +707,7 @@ for (i in 1:nrow(treat.raw)){
 }
 
 ```
+
 ```{r}
 # Validation: assigned treatments
 treatment_assigned <- sapply(all.years, function(yr) {
@@ -728,6 +717,7 @@ treatment_assigned <- sapply(all.years, function(yr) {
 })
 print(treatment_assigned)
 ```
+
 
 ## All Objects in the Array
 
@@ -844,15 +834,15 @@ for (i.year in 1:7){ # 2025, 2021, 2017, 2013, 2009, 2005, 2002
     all.land[,i.year] <- unlist(temp.dat[,3])
   }
   
-  temp.treat <- data_treat[(1+299*(i.year-1)):(299*i.year),]
-  
+  temp.treat <- data_treat[(1+299*(i.year-1)):(299*i.year),] # 2025 for i.year=1, 2021 for i.year=2, ...1
+  # for i.year = 6, it's row 1496:1794, is it not? which corresponds to 2005. And 2002 is 7, is 1795:2093, which is the 2002 treatment.
   # Treatment
-  # First vote - now 7 parties
+  # First vote - 7 parties
   all.treat[,,1,i.year] <- 
-    as.matrix(temp.treat[,seq(12, 24, by=2)])
-  # Second vote - now 7 parties
+    as.matrix(temp.treat[,seq(12, 24, by=2)]) # 24 is letzte Erststimme
+  # Second vote - 7 parties
   all.treat[,,2,i.year] <-
-    as.matrix(temp.treat[,seq(13, 25, by=2)])
+    as.matrix(temp.treat[,seq(13, 25, by=2)]) # 25 is letzte zweitstimme
 }
 
 ```
