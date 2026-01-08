@@ -618,7 +618,7 @@ The current and previous election results are pooled separately.
 ```{r}
 library(plyr)
 data_now <- rbind.fill(result2525,result2121,result1717,result1313,result0909,result0505)
-data_then <- rbind.fill(result2521,result1713,result1309,result0905,result0502)
+data_then <- rbind.fill(result2521,result2117, result1713,result1309,result0905,result0502)
 
 ## Save data for subsequent analyses
 save(data_now, file = "Data/data_now.RData")
@@ -663,11 +663,11 @@ all.parties2 <- c("CDU/CSU","SPD","AfD","FDP","DIE LINKE","GRUENE", "BSW")
 all.states <- c("SH","HH","NI","HB","NRW","HE","RP","BW","BY","SL","B","BB","MV","SN","SA","TH")
 
 data_treat <- data_now # create a treatment matrix
-colnames(result0202)[c(1:4,5)] <- colnames(data_now)[c(1:4,6)]
+colnames(result0202)[c(1:5)] <- colnames(data_now)[c(1:4,6)]
 colnames(result0202)[c(18,19)] <- colnames(data_now)[c(20,21)]
 result0202 <- result0202[,-21]
 
-result0202[setdiff(names(data_now), names(result0202))] <- NA
+result0202[setdiff(names(data_now), names(result0202))] <- NA # adds empty cols for eligible/turnout 2nd
 data_treat <- rbind(data_treat,result0202) # a full dataframe with results from 2002 to 2025
 
 data_treat[,grep("Erststimmen",names(data_treat))] <- 0 # empty cols
@@ -728,10 +728,6 @@ treatment_assigned <- sapply(all.years, function(yr) {
 })
 print(treatment_assigned)
 ```
-```{r}
-data_treat[data_treat$Jahr == 2021 & data_treat$Nr == 61]
-```
-
 
 ## All Objects in the Array
 
@@ -814,7 +810,7 @@ for (i.year in 1:7){ # 2025, 2021, 2017, 2013, 2009, 2005, 2002
       # First vote
       all.abs.total[,,1,i.year,i.now.then] <- as.matrix(temp.dat[,c(4,6,10)])
       # Second vote
-      all.abs.total[,,2,i.year,i.now.then] <- as.matrix(temp.dat[,c(4,7,11)])
+      all.abs.total[,,2,i.year,i.now.then] <- as.matrix(temp.dat[,c(4,6,11)])
      
     } else {
       # for 2002 federal election
@@ -836,7 +832,7 @@ for (i.year in 1:7){ # 2025, 2021, 2017, 2013, 2009, 2005, 2002
         # First vote
         all.abs.total[,,1,i.year,i.now.then] <- as.matrix(temp.dat[,c(4,5,8)])
         # Second vote
-        all.abs.total[,,2,i.year,i.now.then] <- as.matrix(temp.dat[,c(4,22,9)])
+        all.abs.total[,,2,i.year,i.now.then] <- as.matrix(temp.dat[,c(4,5,9)])
 
       } else {
         # For 2002 federal election we don't need previous results
@@ -950,8 +946,6 @@ to.skip.data <- c(5,5,7,6,9,9,10)
 
 
 ```
-
-
 
 
 
