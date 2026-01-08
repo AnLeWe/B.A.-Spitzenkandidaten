@@ -834,15 +834,15 @@ for (i.year in 1:7){ # 2025, 2021, 2017, 2013, 2009, 2005, 2002
     all.land[,i.year] <- unlist(temp.dat[,3])
   }
   
-  temp.treat <- data_treat[(1+299*(i.year-1)):(299*i.year),] # 2025 for i.year=1, 2021 for i.year=2, ...1
-  # for i.year = 6, it's row 1496:1794, is it not? which corresponds to 2005. And 2002 is 7, is 1795:2093, which is the 2002 treatment.
+  temp.treat <- data_treat[(1+299*(i.year-1)):(299*i.year),] # 2025 for i.year=1, 2021 for i.year=2, etc.
+  
   # Treatment
   # First vote - 7 parties
   all.treat[,,1,i.year] <- 
-    as.matrix(temp.treat[,seq(12, 24, by=2)]) # 24 is letzte Erststimme
+    as.matrix(temp.treat[,seq(12, 24, by=2)])
   # Second vote - 7 parties
   all.treat[,,2,i.year] <-
-    as.matrix(temp.treat[,seq(13, 25, by=2)]) # 25 is letzte zweitstimme
+    as.matrix(temp.treat[,seq(13, 25, by=2)])
 }
 
 ```
