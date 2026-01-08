@@ -26,7 +26,7 @@ save.outputs <- 0
 ## Switch for party selection and spill over
  
 ```{r}
-party.selec.switch <- 12
+party.selec.switch <- 1
 spill.over.switch <- 0 # 1: with spill over
 turnout.switch <- 0 # 1: turnout analysis
 ```
@@ -206,11 +206,24 @@ table(all.treat.incumb.fd)
 apply(all.treat.incumb.fd, 3, table)
 ```
 
+```{r}
+#  Check 2002 CDU Zweitstimmen treatment 
+table(all.treat.dummy[, 2, 2, 7])  # CDU, Zweitstimmen, 2002
+
+# Check 2005 CDU Zweitstimmen treatment  
+table(all.treat.dummy[, 2, 2, 6])  # CDU, Zweitstimmen, 2005
+# Should show: 0s and 1s
+
+# Check FD for CDU Zweitstimmen 2005-2002
+table(all.treat.dummy.fd[, 2, 2, 6])  # Should show -1, 0, 1
+```
+
 The resulting all.treat.dummy.fd has:
 - 299 districts
 - 7 parties
 - 2 tiers
 - 6 time points
+
 
 
 Incorporating spill-over treatment
@@ -295,19 +308,31 @@ Descriptives for the FD and treatments
 ```{r}
 
 par(mfrow=c(2,3))
-for (i.year in 1:5){
+for (i.year in 1:6){
   
   temp.fd <- unlist(all.rel.votes.fd[, , 1, i.year])  # Erststimme, This year
   temp.treat <- unlist(all.treat.dummy.fd[, , 1, i.year])
   
   boxplot(temp.fd[!is.na(temp.fd)] ~ temp.treat[!is.na(temp.fd)],
-          main = paste("Year:", 
+          main = paste("Year (Erststimmen):", 
                        c(2025, 2021, 2017, 2013, 2009, 2005)[i.year]),
           xlab = "Treatment",
           ylab = "First Difference of Vote Share")
 }
 
-
+par(mfrow=c(2,3))
+for (i.year in 1:6){
+  
+  # Change to dimension 3 position 2 = Zweitstimmen
+  temp.fd <- unlist(all.rel.votes.fd[, , 2, i.year])  # Zweitstimme
+  temp.treat <- unlist(all.treat.dummy.fd[, , 2, i.year])
+  
+  boxplot(temp.fd[!is.na(temp.fd)] ~ temp.treat[!is.na(temp.fd)],
+          main = paste("Year (Zweitstimmen):", 
+                       c(2025, 2021, 2017, 2013, 2009, 2005)[i.year]),
+          xlab = "Treatment",
+          ylab = "First Difference of Vote Share")
+}
 
 ```
 
