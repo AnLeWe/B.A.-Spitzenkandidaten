@@ -820,9 +820,9 @@ for (i.year in 1:7){ # 2025, 2021, 2017, 2013, 2009, 2005, 2002
         
         # Eligible voters, Turnout, Valid votes
         # First vote
-        all.abs.total[,,1,i.year,i.now.then] <- as.matrix(temp.dat[,c(2,4,7)])
+        all.abs.total[,,1,i.year,i.now.then] <- as.matrix(temp.dat[,c(3,4,7)])
         # Second vote
-        all.abs.total[,,2,i.year,i.now.then] <- as.matrix(temp.dat[,c(2,4,8)])
+        all.abs.total[,,2,i.year,i.now.then] <- as.matrix(temp.dat[,c(3,4,8)])
 
       } else {
         # For 2002 federal election we don't need previous results
