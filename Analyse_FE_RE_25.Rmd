@@ -10,6 +10,11 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+# save ouputs
+save.outputs <- 1
+```
+
 
 ## Load data
 
@@ -186,10 +191,10 @@ for (i.smdpr in 1:2){ # first/second vote
   last.votes <- c(all.rel.votes[,,i.smdpr,2:7] )
   treat <- c(all.treat.dummy[,,i.smdpr,1:6] )
   year  <- as.factor(c(year.index[,,i.smdpr,1:6] ))
-  year <- relevel(year,ref="2005") # Why 2005?
+  year <- relevel(year,ref="2009") # Why 2005 before?
   party <- factor(c(party.index[, , i.smdpr, 1:6]),
                   levels = c("SPD", "CDU", "GRU", "FDP", "AFD", "LIN", "BSW")) # Fixed order and added BSW
-  party <- relevel(party, ref = "CDU")
+  party <- relevel(party, ref = "AFD")
   district <- as.factor(c(all.wkr.index[,,i.smdpr,1:6]))
   cross.treat <- c(all.treat.dummy[,,c(2,1)[i.smdpr],1:6] )
 
@@ -219,7 +224,7 @@ for (i.smdpr in 1:2){ # first/second vote
 
   print(c("Contamination Erststimme (H2b)","Contamination Zweitstimme  (H2a)")[i.smdpr])
   print(summary(lm.fe2 <- lm(votes~ treat + cross.treat + 
-                               last.votes + party * year + district * party)))
+                               last.votes + party * year + district * party))) # why not district * year
   
   print(c("Robust standard error"))
   r.se.fe2 <- sqrt(diag(vcovHC(lm.fe2, type = 'HC')))
@@ -238,13 +243,25 @@ for (i.smdpr in 1:2){ # first/second vote
   if (i.smdpr==2) all.results.pr <- all.results
 }
 
-save(all.results.smd,
-     all.results.pr,
- file=paste0("Data/Estimation_Results_FE_RE_PSelect",party.selec.switch,
-              "_denom",vote.denom,".RData")
-              )
+out_dir <- file.path("Outputs", "Estimation_Results_25", "Fixed_Effects", "/")
+if (save.outputs == 1) {
+  save(
+    all.results.smd,
+    all.results.pr,
+    file = paste0(
+      out_dir,
+      "party.selec",
+      party.selec.switch,
+      "_denom", vote.denom,
+      c("", "_spillover")[spill.over.switch + 1],
+      c("", "_turnout")[turnout.switch + 1],
+      "_", format(Sys.Date(), "%Y-%m-%d"),
+      ".RData"
+    )
+  )
+}
 
-options(max.print=10000)
+options(max.print=100)
 ```
 
 ## Some diagnostic checks
@@ -449,11 +466,16 @@ all.results.pr[[5]] <- r.se
 
 save(all.results.smd,
      all.results.pr,
- file=(paste0("Data/Exogeneity_Results_FE_PSelect",party.selec.switch,
+ file=(paste0(out_dir, "party.selec",
+              party.selec.switch,
               "_denom",vote.denom,
-                ".RData")))
+              c("", "_spillover")[spill.over.switch + 1],
+              c("", "_turnout")[turnout.switch + 1],
+              "_exgnt_",
+              format(Sys.Date(), "%Y-%m-%d"),
+              ".RData")))
 
-options(max.print=10000)
+options(max.print=100)
 
 ```
 

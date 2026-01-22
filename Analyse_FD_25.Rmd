@@ -20,7 +20,7 @@ load("Data/analysis_dat.RData")
 
 ```{r}
 # save ouputs
-save.outputs <- 0
+save.outputs <- 1
 ```
 
 ## Switch for party selection and spill over
@@ -306,34 +306,72 @@ if (party.selec.switch==3) {
 Descriptives for the FD and treatments
 
 ```{r}
+out_dir <- file.path("Outputs", "Estimation_Results_25", "First_Differencing", "Figures")
+years <- c(2025, 2021, 2017, 2013, 2009, 2005)
 
-par(mfrow=c(2,3))
-for (i.year in 1:6){
-  
-  temp.fd <- unlist(all.rel.votes.fd[, , 1, i.year])  # Erststimme, This year
-  temp.treat <- unlist(all.treat.dummy.fd[, , 1, i.year])
-  
-  boxplot(temp.fd[!is.na(temp.fd)] ~ temp.treat[!is.na(temp.fd)],
-          main = paste("Year (Erststimmen):", 
-                       c(2025, 2021, 2017, 2013, 2009, 2005)[i.year]),
-          xlab = "Treatment",
-          ylab = "First Difference of Vote Share")
+# filename
+generate_filename <- function(vote_type) {
+  paste0(
+    "party.selec", party.selec.switch,
+    "_denom", vote.denom,
+    if (spill.over.switch) "_spillover" else "",
+    if (turnout.switch) "_turnout" else "",
+    "_FD_Boxplots_", vote_type, "-",
+    format(Sys.Date(), "%Y-%m-%d"),
+    ".pdf"
+  )
 }
 
-par(mfrow=c(2,3))
-for (i.year in 1:6){
+# plotting function
+plot_fd_boxplots <- function(vote_dim, vote_label) {
+  par(mfrow = c(2, 3), 
+      mar = c(4, 4.5, 3, 1),
+      oma = c(0, 0, 2, 0))
   
-  # Change to dimension 3 position 2 = Zweitstimmen
-  temp.fd <- unlist(all.rel.votes.fd[, , 2, i.year])  # Zweitstimme
-  temp.treat <- unlist(all.treat.dummy.fd[, , 2, i.year])
+  for (i_year in seq_along(years)) {
+    temp_fd <- unlist(all.rel.votes.fd[, , vote_dim, i_year])
+    temp_treat <- unlist(all.treat.dummy.fd[, , vote_dim, i_year])
+    
+    valid_idx <- !is.na(temp_fd)
+    
+    boxplot(temp_fd[valid_idx] ~ temp_treat[valid_idx],
+            main = years[i_year],
+            xlab = "Treatment",
+            ylab = "First Difference of Vote Share",
+            col = c("#E8F4F8", "#B8D4E8"),
+            border = "#2C5F7C",
+            notch = FALSE,
+            outline = TRUE,
+            boxwex = 0.6,
+            las = 1,
+            cex.axis = 0.9,
+            cex.lab = 1.0,
+            cex.main = 1.1,
+            font.main = 1)
+    
+    abline(h = 0, lty = 2, col = "gray50", lwd = 0.8)
+    grid(nx = NA, ny = NULL, col = "gray90", lty = 1, lwd = 0.5)
+  }
   
-  boxplot(temp.fd[!is.na(temp.fd)] ~ temp.treat[!is.na(temp.fd)],
-          main = paste("Year (Zweitstimmen):", 
-                       c(2025, 2021, 2017, 2013, 2009, 2005)[i.year]),
-          xlab = "Treatment",
-          ylab = "First Difference of Vote Share")
+  mtext(paste("First Differencing Analysis:", vote_label, "Vote"), 
+        outer = TRUE, cex = 1.3, font = 2)
 }
 
+# plot
+if (save.outputs == 1) {
+  pdf(file.path(out_dir, generate_filename("FPTP")), 
+      width = 12, height = 8)
+  plot_fd_boxplots(vote_dim = 1, vote_label = "FPTP")
+  dev.off()
+  
+  pdf(file.path(out_dir, generate_filename("PR")), 
+      width = 12, height = 8)
+  plot_fd_boxplots(vote_dim = 2, vote_label = "PR")
+  dev.off()
+} else {
+  plot_fd_boxplots(vote_dim = 1, vote_label = "FPTP")
+  plot_fd_boxplots(vote_dim = 2, vote_label = "PR")
+}
 ```
 
 
@@ -355,12 +393,12 @@ for (i.smdpr in 1:2){  # first/second vote
   treat <- c(all.treat.dummy.fd[, , i.smdpr, ])
   treat.incumb <- c(all.treat.incumb.fd[, , i.smdpr, ])
   year  <- as.factor(c(year.index[, , i.smdpr, ]))
-  year <- relevel(year, ref = "2005")  # Change to middle year?
+  year <- relevel(year, ref = "2009")  # Change to middle year?
   
   # Party order: SPD, CDU, GRUENE, FDP, AfD, DIE LINKE, BSW
   party <- factor(c(party.index[, , i.smdpr, ]),
                   levels = c("SPD", "CDU", "GRU", "FDP", "AFD", "LIN", "BSW", "Turnout"))
-  party <- relevel(party, ref = "CDU") #prev: AFD
+  party <- relevel(party, ref = "AFD")
   
   cross.treat <- c(all.treat.dummy.fd[, , c(2,1)[i.smdpr], ])
   cross.treat.incumb <- c(all.treat.incumb.fd[, , c(2,1)[i.smdpr], ])
@@ -426,12 +464,14 @@ for (i.smdpr in 1:2){  # first/second vote
 
 
 ```{r}
+out_dir <- file.path("Outputs", "Estimation_Results_25", "First_Differencing", "/")
 if (save.outputs == 1) {
   save(
     all.results.smd,
     all.results.pr,
     file = paste0(
-      "Data/Estimation_Results_25/First_Differencing/Estimation_Results_PSelect",
+      out_dir,
+      "party.selec",
       party.selec.switch,
       "_denom", vote.denom,
       c("", "_spillover")[spill.over.switch + 1],
@@ -459,7 +499,7 @@ plot(studres(lm.out) ~ fitted(lm.out),
 abline(h = 0, lty = 2)
 ```
 
-```{r}
+```{r , include=FALSE}
 ## Diagnostic Tests
 print("Diagnostic Tests")
 
@@ -653,12 +693,13 @@ for (i.smdpr in 1:2){  # Loop over Erst- and Zweitstimme
 
 save(all.results.t1.smd,
      all.results.t1.pr,
-     file = paste0("Data/Estimation_Results_25/First_Differencing/Exogeneity_Results_PSelect", 
+     file = paste0(out_dir, "party.selec",
                    party.selec.switch,
                    "_denom", vote.denom,
                    c("", "_spillover")[spill.over.switch + 1],
                    c("", "_turnout")[turnout.switch + 1],
-                   "_", format(Sys.Date(), "%Y%m%d"),
+                   "_exgnt_",
+                   format(Sys.Date(), "%Y-%m-%d"),
                    ".RData"))
 
 ```
