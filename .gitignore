@@ -3,5 +3,5 @@
 .RData
 .Ruserdata
 .DS_Store
-.Rproj
+*.Rproj
 Outputs/Estimation_Results_25/Fixed_Effects/*.RData
