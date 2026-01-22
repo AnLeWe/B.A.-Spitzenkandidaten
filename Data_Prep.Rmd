@@ -687,7 +687,7 @@ for (i in 1:nrow(treat.raw)){
     which.wkr <- as.numeric(treat.raw$WK[i])    # <- original WK Nr. to match with results
     treat.wkr <- as.numeric(treat.raw$T_DM[i])
     # identify which treatment in which state
-    which.land <- which(all.states == treat.raw$Land[i]) # e.g. row 2: NRW -> 5
+    which.land <- which(all.states == treat.raw$Land.neu[i]) # e.g. row 2: NRW -> 5
     treat.land <- as.numeric(treat.raw$T_LP[i]) # e.g. row2: 5, KK who was there before as non KK
     ## From here replacing values in the treatment matrix
     
@@ -698,7 +698,7 @@ for (i in 1:nrow(treat.raw)){
     }
     
     # Party list 
-    if (length(which.land)> 0){ # only in case when the state was identified
+    if (length(which.land)> 0){
       data_treat[data_treat$Jahr==which.year & data_treat$Land==which.land,
                  grep(all.parties2[which.party],names(data_treat))[2]] <- treat.land
     }
@@ -768,6 +768,8 @@ A matrix of federal states (299 rows × 7 years)
 - 2002 (year 7): Only current results exist (i.now.then = 1); previous results (i.now.then = 2) are NA
 - BSW (position 7): Only exists for 2025 (year 1); all other years are NA
 - Earlier years: AfD may be NA for years before 2013 when the party was founded
+
+
 
 ```{r}
 all.abs.votes <- array(NA, dim=c(299, 7, 2, 7, 2))  # 7 parties, 7 years
@@ -848,6 +850,8 @@ for (i.year in 1:7){ # 2025, 2021, 2017, 2013, 2009, 2005, 2002
 ```
 
 
+
+
 ```{r}
 # Check that 2002 AfD and BSW are NA
 sum(!is.na(all.abs.votes[, 5, , 7, 1]))  # Should be 0 (AfD 2002)
@@ -887,7 +891,7 @@ Constituency allocation for fixed-effect models
 ```{r}
 wkr.assignment <- read_xlsx("Data/data_now_WK_Einteilung.xlsx",sheet=6)
 
-wkr.assignment <- wkr.assignment[,paste0("Nr.",c("25","21","17","13","09","05","02"))]
+wkr.assignment <- wkr.assignment[,paste0("Nr.",c("25","21","17","13","09","05","02"))] # timetraced wkr
 wkr.assignment <- as.matrix(wkr.assignment)
 
 
