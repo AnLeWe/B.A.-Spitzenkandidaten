@@ -26,7 +26,7 @@ save.outputs <- 1
 ## Switch for party selection and spill over
  
 ```{r}
-party.selec.switch <- 1
+party.selec.switch <- 1 # see below for options
 spill.over.switch <- 0 # 1: with spill over
 turnout.switch <- 0 # 1: turnout analysis
 ```
@@ -208,14 +208,14 @@ apply(all.treat.incumb.fd, 3, table)
 
 ```{r}
 #  Check 2002 CDU Zweitstimmen treatment 
-table(all.treat.dummy[, 2, 2, 7])  # CDU, Zweitstimmen, 2002
+#table(all.treat.dummy[, 2, 2, 7])  # CDU, Zweitstimmen, 2002
 
 # Check 2005 CDU Zweitstimmen treatment  
-table(all.treat.dummy[, 2, 2, 6])  # CDU, Zweitstimmen, 2005
+#table(all.treat.dummy[, 2, 2, 6])  # CDU, Zweitstimmen, 2005
 # Should show: 0s and 1s
 
 # Check FD for CDU Zweitstimmen 2005-2002
-table(all.treat.dummy.fd[, 2, 2, 6])  # Should show -1, 0, 1
+#table(all.treat.dummy.fd[, 2, 2, 6])  # Should show -1, 0, 1
 ```
 
 The resulting all.treat.dummy.fd has:
@@ -422,16 +422,16 @@ for (i.smdpr in 1:2){  # first/second vote
   print(c("DV: Erststimme", "DV: Zweitstimme")[i.smdpr])
   if (turnout.switch == 0){
     print(summary(lm.out <- lm(votes ~ treat +
-                                  #treat.incumb + # control for Incumbency
+                                  treat.incumb + # control for Incumbency
                                   cross.treat +
-                                  #cross.treat.incumb +
+                                  cross.treat.incumb +
                                   year + year:party 
                                   , data = lm.dat))) 
   } else {
     print(summary(lm.out <- lm(votes ~ treat +
-                                  #treat.incumb + # control for Incumbency
+                                  treat.incumb + # control for Incumbency
                                   cross.treat +
-                                  #cross.treat.incumb +
+                                  cross.treat.incumb +
                                   year 
                                   , data = lm.dat))) 
   }
@@ -499,38 +499,38 @@ plot(studres(lm.out) ~ fitted(lm.out),
 abline(h = 0, lty = 2)
 ```
 
-```{r , include=FALSE}
+```{r }
 ## Diagnostic Tests
-print("Diagnostic Tests")
+#print("Diagnostic Tests")
 
 
-for (i.smdpr in 1:2){
-  if (i.smdpr == 1){
-    lm.out <- all.results.smd[[1]]
-    temp.dat <- all.results.smd[[3]]
-  } else {
-    lm.out <- all.results.pr[[1]]
-    temp.dat <- all.results.pr[[3]]
-  }
+#for (i.smdpr in 1:2){
+#  if (i.smdpr == 1){
+#    lm.out <- all.results.smd[[1]]
+#    temp.dat <- all.results.smd[[3]]
+#  } else {
+#   lm.out <- all.results.pr[[1]]
+#    temp.dat <- all.results.pr[[3]]
+#  }
   
-  print("")
-  print(c("ERSTSTIMME", "ZWEITSTIMME")[i.smdpr])
-  print("")
+#  print("")
+#  print(c("ERSTSTIMME", "ZWEITSTIMME")[i.smdpr])
+#  print("")
   
   # Breusch-Pagan Test
-  print("Breusch-Pagan Test (Heteroskedasticity):")
-  bp_test <- bptest(lm.out)
-  print(bp_test)
+#  print("Breusch-Pagan Test (Heteroskedasticity):")
+#  bp_test <- bptest(lm.out)
+#  print(bp_test)
   
   # Visual diagnostic
-  par(mfrow = c(2, 2))
-  plot(lm.out)
-  par(mfrow = c(1, 1))
+#  par(mfrow = c(2, 2))
+#  plot(lm.out)
+#  par(mfrow = c(1, 1))
   
   # Shapiro-Wilk (normality)
-  print("Shapiro-Wilk Test (Normality of Residuals):")
-  shapiro.test(sample(residuals(lm.out), 5000))  # if n > 5000
-}
+#  print("Shapiro-Wilk Test (Normality of Residuals):")
+#  shapiro.test(sample(residuals(lm.out), 5000))  # if n > 5000
+#}
 ```
 
 
@@ -691,7 +691,8 @@ for (i.smdpr in 1:2){  # Loop over Erst- and Zweitstimme
   if (i.smdpr == 2) all.results.t1.pr <- all.results.t1
 }
 
-save(all.results.t1.smd,
+if (save.outputs == 1) {
+  save(all.results.t1.smd,
      all.results.t1.pr,
      file = paste0(out_dir, "party.selec",
                    party.selec.switch,
@@ -701,5 +702,6 @@ save(all.results.t1.smd,
                    "_exgnt_",
                    format(Sys.Date(), "%Y-%m-%d"),
                    ".RData"))
+  }
 
 ```

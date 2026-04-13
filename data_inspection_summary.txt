@@ -1,0 +1,87 @@
+data_now columns:
+ [1] "Nr "                          "Gebiet "                     
+ [3] "Land"                         "Wahlberechtigte Erststimmen" 
+ [5] "Wahlberechtigte Zweitstimmen" "Waehlende Erststimmen"       
+ [7] "Waehlende Zweitstimmen"       "Ungueltige Erststimmen"      
+ [9] "Ungueltige Zweitstimmen"      "Gueltige Erststimmen"        
+[11] "Gueltige Zweitstimmen"        "SPD Erststimmen"             
+[13] "SPD Zweitstimmen"             "CDU/CSU Erststimmen"         
+[15] "CDU/CSU Zweitstimmen"         "GRUENE Erststimmen"          
+[17] "GRUENE Zweitstimmen"          "FDP Erststimmen"             
+[19] "FDP Zweitstimmen"             "AfD Erststimmen"             
+[21] "AfD Zweitstimmen"             "DIE LINKE Erststimmen"       
+[23] "DIE LINKE Zweitstimmen"       "BSW Erststimmen"             
+[25] "BSW Zweitstimmen"             "Jahr"                        
+[27] "d05"                          "d09"                         
+[29] "d13"                          "d17"                         
+[31] "d21"                          "d25"                         
+
+data_then columns:
+ [1] "Nr "                          "Gebiet "                     
+ [3] "Land"                         "Wahlberechtigte Erststimmen" 
+ [5] "Wahlberechtigte Zweitstimmen" "Waehlende Erststimmen"       
+ [7] "Waehlende Zweitstimmen"       "Ungueltige Erststimmen"      
+ [9] "Ungueltige Zweitstimmen"      "Gueltige Erststimmen"        
+[11] "Gueltige Zweitstimmen"        "SPD Erststimmen"             
+[13] "SPD Zweitstimmen"             "CDU/CSU Erststimmen"         
+[15] "CDU/CSU Zweitstimmen"         "GRUENE Erststimmen"          
+[17] "GRUENE Zweitstimmen"          "FDP Erststimmen"             
+[19] "FDP Zweitstimmen"             "AfD Erststimmen"             
+[21] "AfD Zweitstimmen"             "DIE LINKE Erststimmen"       
+[23] "DIE LINKE Zweitstimmen"       "BSW Erststimmen"             
+[25] "BSW Zweitstimmen"             "Jahr"                        
+[27] "d05"                          "d09"                         
+[29] "d13"                          "d17"                         
+[31] "d21"                          "d25"                         
+
+data_treat columns:
+ [1] "Nr "                          "Gebiet "                     
+ [3] "Land"                         "Wahlberechtigte Erststimmen" 
+ [5] "Wahlberechtigte Zweitstimmen" "Waehlende Erststimmen"       
+ [7] "Waehlende Zweitstimmen"       "Ungueltige Erststimmen"      
+ [9] "Ungueltige Zweitstimmen"      "Gueltige Erststimmen"        
+[11] "Gueltige Zweitstimmen"        "SPD Erststimmen"             
+[13] "SPD Zweitstimmen"             "CDU/CSU Erststimmen"         
+[15] "CDU/CSU Zweitstimmen"         "GRUENE Erststimmen"          
+[17] "GRUENE Zweitstimmen"          "FDP Erststimmen"             
+[19] "FDP Zweitstimmen"             "AfD Erststimmen"             
+[21] "AfD Zweitstimmen"             "DIE LINKE Erststimmen"       
+[23] "DIE LINKE Zweitstimmen"       "BSW Erststimmen"             
+[25] "BSW Zweitstimmen"             "Jahr"                        
+[27] "d05"                          "d09"                         
+[29] "d13"                          "d17"                         
+[31] "d21"                          "d25"                         
+
+NA counts data_now:
+                         Nr                       Gebiet  
+                           0                            0 
+                        Land  Wahlberechtigte Erststimmen 
+                           0                            0 
+Wahlberechtigte Zweitstimmen        Waehlende Erststimmen 
+                         897                            0 
+      Waehlende Zweitstimmen       Ungueltige Erststimmen 
+                         897                            0 
+     Ungueltige Zweitstimmen         Gueltige Erststimmen 
+                           0                            0 
+       Gueltige Zweitstimmen              SPD Erststimmen 
+                           0                            0 
+            SPD Zweitstimmen          CDU/CSU Erststimmen 
+                           0                            0 
+        CDU/CSU Zweitstimmen           GRUENE Erststimmen 
+                           0                            8 
+         GRUENE Zweitstimmen              FDP Erststimmen 
+                           4                            1 
+            FDP Zweitstimmen              AfD Erststimmen 
+                           0                          762 
+            AfD Zweitstimmen        DIE LINKE Erststimmen 
+                         598                           18 
+      DIE LINKE Zweitstimmen              BSW Erststimmen 
+                           0                         1759 
+            BSW Zweitstimmen                         Jahr 
+                        1495                            0 
+                         d05                          d09 
+                           0                            0 
+                         d13                          d17 
+                           0                            0 
+                         d21                          d25 
+                           0                            0 
