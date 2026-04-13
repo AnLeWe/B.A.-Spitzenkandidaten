@@ -942,6 +942,94 @@ to.skip.data <- c(5,5,7,6,9,9,10)
 ```
 
 
+# Politbarometer data
+```{r}
+library(haven)
+filenames <- list.files("Data/politbarometer/", pattern = "*.sav", full.names = TRUE)
+polit_list <- setNames(lapply(filenames, read_sav), basename(filenames))
+
+
+```
+### 2021
+V106: Baerbock (GR), KK
+V110: Laschet (CDU), KK
+V112: Lindner (FDP)
+V116: Scholz (SPD), KK
+V112: Wagenknecht (LI)
+Missing: Weidel (AfD), Chrupalla (AfD), Wissler (LI), Bartsch (LI)
+extra var: partly asked in 'wichtiger politiker' variable
+
+### 2017
+V104: Saklo Lindner (FDP)
+V107: Skalo Merkel (CDU), KK
+V109: Saklo Özdemir (GR)
+V111: Skalo Schulz (SPD), KK
+V114: Skalo Wagenknecht (LI)
+missing: Bartsch (LI), Göring-Eckardt (GR), Weidel (AfD), Gauland (AfD).
+
+### 2013
+V114: Brüderle (FDP)
+V119: Merkel (CDU), KK
+V121: Gysi (LI)
+V124: Steinbrück (SPD), KK
+V126: Trittin (GR)
+Missing: Göring-Eckardt (GR), Wagenknecht (LI), Bartsch (LI), Ernst (LI), van Aken (LI), Lay (LI), Gohlke (LI), Golze (LI).
+
+### 2009 west
+V105: Gysi (LI)
+V108: Lafontaine (LI)
+V109: Merkel (CDU), KK
+V116: Steinmeier (SPD), KK
+V117: Westerwelle (FDP)
+Missing: Trittin (GR), Künast (GR)
+
+### 2009 east
+V105: Gysi (LI)
+V108: Lafontaine (LI)
+V109: Merkel (CDU), KK
+V116: Steinmeier (SPD), KK
+V117: Westerwelle (FDP)
+Missing: Trittin (GR), Künast (GR)
+
+### 2005 west
+v143: Fischer (GR)
+v144: Gysi (LI)
+v147: Lafontaine (LI)
+v148: Merkel (CDU)
+v154: Schröder (SPD)
+v158: Westerwelle (FDP)
+Mssing: none
+extra vars: preferred chancellor
+
+### 2005 east
+v143: Fischer (GR)
+v144: Gysi (LI)
+v147: Lafontaine (LI)
+v148: Merkel (CDU)
+v154: Schröder (SPD)
+v158: Westerwelle (FDP)
+Missing: none
+extra vars: preferred chancellor
+
+### 2002 west
+v94: Fischer (GR)
+v95: Gysi (LI) -> but we don't have him as SK, so they didn't have SK?
+v103: Schröder (SPD), KK
+v105: Stoiber (CDU), KK
+v108: Westerwelle (FDP), KK
+Missing: none
+extra: here Künast (GR), v97 Merkel
+
+### 2002 east
+v94: Fischer (GR)
+v95: Gysi (LI)
+v103: Schröder (SPD), KK
+v105: Stoiber (CDU), KK
+v108: Westerwelle (FDP), KK
+Missing: none
+extra: here Künast (GR), v97 Merkel
+
+
 
 ## Save all the objects
 
