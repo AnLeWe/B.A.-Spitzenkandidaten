@@ -1,24 +1,24 @@
 # Priming & Leader Effects in Germany
 
-Working repository for the research paper on priming and leader effects in German federal elections (Bundestagswahlen 2002–2021/2025).
+Replication repository for the research paper on priming and leader effects in German federal elections (Bundestagswahlen 2002–2021/2025).
+
+**Paper (Overleaf):** https://www.overleaf.com/project/64466dbd557b25b030dea621  
+**Supplementary files (Google Drive):** https://drive.google.com/drive/folders/1DO4jQlf_mEw0-w5F9CJjkiaNFusmemk8?usp=drive_link  
+**Related data repository:** [SuShikano/BTW-districts](https://github.com/SuShikano/BTW-districts)
 
 ## Abstract
 
 In parliamentary systems, research has demonstrated the substantial impact of party leaders on voter decisions depending on the institutional context, the degree of person-centered campaigning style of political parties, and further factors. However, previous studies paid less attention to the mechanisms under which such campaign styles affect voter decisions. At least two different mechanisms are possible: priming and mobilization. To examine which of these mechanisms is at work, the mixed-member system offers an interesting case since leading politicians can run in two different ways for office while their candidacy can affect the results of both tiers through contamination effects. This makes it possible to derive the implications of different mechanisms from district-level election results. By applying the first-differenced estimator to district-level election results from German Bundestag elections since 2002, we demonstrate that the priming effect is more likely than the mobilization effect.
 
-## Related Repository
+## Data
 
-This project is connected to **[SuShikano/BTW-districts](https://github.com/SuShikano/BTW-districts)**, which provides the prepared district-level BTW data used as an input here.
-
-## Data Overview
-
-### Primary: Bundeswahlleiter constituency vote results ✅ present
+### Bundeswahlleiter constituency vote results
 
 The BTW Kerg CSV files (*Endgültige Ergebnisse nach Wahlkreisen*) are the backbone of all analyses. They contain first- and second-vote (*Erst-/Zweitstimmen*) counts by constituency (*Wahlkreis*) for each election year. Files for 2002–2025 are included in `Data/btw_kerg/` and are publicly available from the [Federal Returning Officer](https://www.bundeswahlleiter.de/bundestagswahlen/2021/ergebnisse.html).
 
-### Supplementary: Politbarometer ✅ present
+### Politbarometer
 
-Individual-year Politbarometer survey files from GESIS are included in `Data/politbarometer/` for all election years 2002–2021 (both `.dta` and `.sav` formats):
+Individual-year Politbarometer survey files from GESIS are included in `Data/politbarometer/` for all election years 2002–2021 (both `.dta` and `.sav` formats). These are used to construct the candidate-coverage treatment variable (whether a *Spitzenkandidat*/*Kanzlerkandidat* ran as a direct candidate in a constituency).
 
 | GESIS study | Year | Coverage |
 |---|---|---|
@@ -29,25 +29,17 @@ Individual-year Politbarometer survey files from GESIS are included in `Data/pol
 | ZA6988 | 2017 | Combined |
 | ZA7856 | 2021 | Combined |
 
-These are used to construct the candidate-coverage treatment variable (whether a *Spitzenkandidat*/*Kanzlerkandidat* ran as a direct candidate in a constituency).
+### ARD Deutschlandtrend
 
-### ARD Deutschlandtrend ⚠️ questionnaire PDFs only — no data
+`Data/ARD_Deutschlandtrend/` contains the questionnaire/codebook PDFs only (ZA4594, ZA4597, ZA5448, ZA5915, ZA6987, ZA7863, ZA9050). The actual survey data is not included in this repository.
 
-`Data/ARD_Deutschlandtrend/` contains only the **questionnaire/codebook PDFs** (ZA4594, ZA4597, ZA5448, ZA5915, ZA6987, ZA7863, ZA9050). The actual survey data is **not available** in this repository.
-
-### Structural data ✅ present
+### Structural data
 
 `BTW_Strukturdaten/` contains official constituency structural data (*Strukturdaten*) from the Bundeswahlleiter for all election years 2002–2025.
 
-### Supplementary processed files & outputs
-
-All additional materials (processed data, model outputs, figures) are available on **Google Drive**:
-
-🗂️ **[Open project folder on Google Drive](https://drive.google.com/drive/folders/1DO4jQlf_mEw0-w5F9CJjkiaNFusmemk8?usp=drive_link)**
-
 ## Repository Structure
 
-### Analysis scripts (root)
+### Analysis scripts
 
 | File | Description |
 |---|---|
@@ -64,42 +56,38 @@ All additional materials (processed data, model outputs, figures) are available 
 
 ### `Data/`
 
-| Path | Contents | Present |
-|---|---|---|
-| `btw_kerg/` | Bundeswahlleiter Kerg CSVs, BTW 2002–2025 | ✅ |
-| `politbarometer/` | Politbarometer year files, 2002–2021 (.dta/.sav) | ✅ |
-| `ARD_Deutschlandtrend/` | Deutschlandtrend questionnaire PDFs (no data) | ⚠️ PDFs only |
-| `Misc_BTW2025/` | BTW 2025 auxiliary files (party list, Wahlkreis names, municipality mapping) | ✅ |
-| `analysis_dat.RData` | Final pooled analysis dataset | ✅ |
-| `data_now.RData` / `data_then.RData` | Processed election-result datasets | ✅ |
-| `btw_all_shape.RData` | Spatial / shape data for constituencies | ✅ |
-| `Treatment_WK.xlsx` | Treatment variable per Wahlkreis | ✅ |
-| `Wahlkreis_names.xlsx` | Constituency name lookup | ✅ |
-| `data_now_WK_Einteilung.xlsx` | Wahlkreis assignment table | ✅ |
-| `ModelSummaries.xlsx` | Model coefficient summary table | ✅ |
-| `coverage_matrix.md` | Candidate coverage matrix (markdown) | ✅ |
+| Path | Contents |
+|---|---|
+| `btw_kerg/` | Bundeswahlleiter Kerg CSVs, BTW 2002–2025 |
+| `politbarometer/` | Politbarometer year files, 2002–2021 (.dta/.sav) |
+| `ARD_Deutschlandtrend/` | Deutschlandtrend questionnaire PDFs (no data) |
+| `Misc_BTW2025/` | BTW 2025 auxiliary files (party list, Wahlkreis names, municipality mapping) |
+| `analysis_dat.RData` | Final pooled analysis dataset |
+| `data_now.RData` / `data_then.RData` | Processed election-result datasets |
+| `btw_all_shape.RData` | Spatial data for constituencies |
+| `Treatment_WK.xlsx` | Treatment variable per Wahlkreis |
+| `Wahlkreis_names.xlsx` | Constituency name lookup |
+| `data_now_WK_Einteilung.xlsx` | Wahlkreis assignment table |
+| `ModelSummaries.xlsx` | Model coefficient summary table |
+| `coverage_matrix.md` | Candidate coverage matrix |
 
 ### `BTW_Strukturdaten/`
 
-Structural data CSVs for 2002, 2005, 2009, 2013, 2017, 2021, 2025.
+Structural data CSVs from the Bundeswahlleiter for 2002, 2005, 2009, 2013, 2017, 2021, and 2025.
 
 ### `Outputs/`
 
 | Path | Contents |
 |---|---|
-| `Estimation_Results_21/` | Full FD/FE estimation results, exogeneity checks, incumbency models, and figures for BTW 2002–2021 |
+| `Estimation_Results_21/` | FD/FE estimation results, exogeneity checks, incumbency models, and figures for BTW 2002–2021 |
 | `Estimation_Results_21/Figures/` | Coefficient plots and visualizations |
 | `Estimation_Results_25/First_Differencing/` | FD estimation results including BTW 2025 |
 
 ### `Karten_WK/`
 
-Constituency map PDFs (Bundeswahlleiter) for BTW 2002–2021.
+Constituency map PDFs from the Bundeswahlleiter for BTW 2002–2021.
 
 ## Requirements
 
-- R ≥ 4.2
+- R >= 4.2
 - Key packages: `tidyverse`, `fixest`, `modelsummary`, `haven`, `sf`
-
-## Contact
-
-Anna-Lena Werner
