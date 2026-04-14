@@ -1,6 +1,6 @@
 # Priming & Leader Effects in Germany
 
-Replication repository for the research paper on priming and leader effects in German federal elections (Bundestagswahlen 2002–2021/2025).
+Working repository for the research paper on priming and leader effects in German federal elections (Bundestagswahlen 2002–2021/2025).
 
 ## Abstract
 
