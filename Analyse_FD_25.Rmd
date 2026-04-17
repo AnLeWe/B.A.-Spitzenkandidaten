@@ -26,9 +26,9 @@ save.outputs <- 1
 ## Switch for party selection and spill over
  
 ```{r}
-party.selec.switch <- 1 # see below for options
+party.selec.switch <- 3 # see below for options
 spill.over.switch <- 0 # 1: with spill over
-turnout.switch <- 0 # 1: turnout analysis
+turnout.switch <- 1 # 1: turnout analysis
 ```
 
 See below what value corresponds to what party selection.
@@ -53,8 +53,8 @@ See below what value corresponds to what party selection.
 ## Party positions: 1=SPD, 2=CDU/CSU, 3=GRUENE, 4=FDP, 5=AfD, 6=DIE LINKE, 7=BSW
 
 if (party.selec.switch==1) party.selection <- c(1:7)       # All parties: S C G F A L B
-if (party.selec.switch==2) party.selection <- c(1:3)       # SPD, CDU/CSU, GRUENE (in 21, 25 only)
-if (party.selec.switch==3) party.selection <- c(4:7)       # FDP, AfD, DIE LINKE, BSW , G (without SPD, CDU/CSU, GRUENE (in 21, 25))
+if (party.selec.switch==2) party.selection <- c(1:3)       # SPD, CDU/CSU, GRUENE (GRUENE in 2021+, AfD in 2025 only)
+if (party.selec.switch==3) party.selection <- c(3:7)       # Without SPD and CDU/CSU (GRUENE pre-2021, AfD pre-2025)
 if (party.selec.switch==4) party.selection <- c(1,3:7)     # Without CDU/CSU
 if (party.selec.switch==5) party.selection <- c(2:7)       # Without SPD
 if (party.selec.switch==6) party.selection <- c(1:3,5:7)   # Without FDP
@@ -274,7 +274,7 @@ if (turnout.switch == 0){
   # Party order in arrays: SPD, CDU/CSU, GRUENE, FDP, AfD, DIE LINKE, BSW
   party.labels <- c("SPD", "CDU", "GRU", "FDP", "AFD", "LIN", "BSW")[party.selection]
   
-  for (i.party in 1:length(party.selection)){
+  for (i.party in seq_along(party.selection)){
     party.index[, i.party, , ] <- party.labels[i.party]
   }
 } else {
@@ -285,16 +285,20 @@ if (turnout.switch == 0){
 table(party.index)
 ```
 
-### Special treatment of Greens (2021, 2025)
+### Special treatment of Greens (2021, 2025) and AfD (major in 2025 for switch 2, pre-2025 for switch 3)
 
 ```{r}
 if (party.selec.switch==2) {
-  # Keep only 2021+
+  # Keep GRUENE only 2021+
   all.rel.votes.fd[party.index=="GRU" & year.index < 2021] <- NA
+  # Keep AfD only in 2025
+  all.rel.votes.fd[party.index=="AFD" & year.index < 2025] <- NA
 }
 if (party.selec.switch==3) {
-  # Keep only pre-2021 (2017 and earlier)
+  # Keep GRUENE only pre-2021 (2017 and earlier)
   all.rel.votes.fd[party.index=="GRU" & year.index >= 2021] <- NA
+  # Keep AfD only pre-2025 years
+  all.rel.votes.fd[party.index=="AFD" & year.index >= 2025] <- NA
 }
 
 ```
@@ -422,16 +426,16 @@ for (i.smdpr in 1:2){  # first/second vote
   print(c("DV: Erststimme", "DV: Zweitstimme")[i.smdpr])
   if (turnout.switch == 0){
     print(summary(lm.out <- lm(votes ~ treat +
-                                  treat.incumb + # control for Incumbency
+                                  #treat.incumb + # control for Incumbency
                                   cross.treat +
-                                  cross.treat.incumb +
+                                  #cross.treat.incumb +
                                   year + year:party 
                                   , data = lm.dat))) 
   } else {
     print(summary(lm.out <- lm(votes ~ treat +
-                                  treat.incumb + # control for Incumbency
+                                  #treat.incumb + # control for Incumbency
                                   cross.treat +
-                                  cross.treat.incumb +
+                                  #cross.treat.incumb +
                                   year 
                                   , data = lm.dat))) 
   }
