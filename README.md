@@ -88,8 +88,6 @@ The final replicated figures are written to `Outputs/Estimation_Results_21/Legac
 | `analysis_dat_legacy21.RData` | Prepared analysis dataset for legacy BTW 2002–2021 replication pipeline |
 | `Treatment_WK_pre2025_from_git.xlsx` | Recovered legacy treatment workbook used in original 2021-based models |
 
-**Note:** All Politbarometer and Bundeswahlleiter election data files (2002–2021) in this repository support both the current analysis pipeline and the legacy replication runs. Individual-year Politbarometer files are necessary to construct the candidate-coverage treatment variable from survey responses about *Spitzenkandidaten / Kanzlerkandidaten* in each constituency.
-
 ### `BTW_Strukturdaten/`
 
 Structural data CSVs from the Bundeswahlleiter for 2002, 2005, 2009, 2013, 2017, 2021, and 2025.
