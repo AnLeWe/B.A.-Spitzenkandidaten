@@ -67,19 +67,28 @@ The final replicated figures are written to `Outputs/Estimation_Results_21/Legac
 
 ### `Data/`
 
+#### Current analysis data
 | Path | Contents |
 |---|---|
 | `btw_kerg/` | Bundeswahlleiter Kerg CSVs, BTW 2002–2025 |
-| `politbarometer/` | Politbarometer year files, 2002–2021 (.dta/.sav) |
+| `Politbarometer/` | Politbarometer survey files for BTW 2002–2021 (`.dta` and `.sav` formats) from GESIS |
 | `ARD_Deutschlandtrend/` | Deutschlandtrend questionnaire PDFs (no data) |
 | `Misc_BTW2025/` | BTW 2025 auxiliary files (party list, Wahlkreis names, municipality mapping) |
 | `analysis_dat.RData` | Final pooled analysis dataset |
 | `data_now.RData` / `data_then.RData` | Processed election-result datasets |
 | `btw_all_shape.RData` | Spatial data for constituencies |
-| `Treatment_WK.xlsx` | Treatment variable per Wahlkreis |
+| `Treatment_WK.xlsx` | Current treatment variable assignment per Wahlkreis |
 | `Wahlkreis_names.xlsx` | Constituency name lookup |
 | `data_now_WK_Einteilung.xlsx` | Wahlkreis assignment table |
 | `ModelSummaries.xlsx` | Model coefficient summary table |
+
+#### Legacy data files (BTW 2002–2021 replication)
+| Path | Contents |
+|---|---|
+| `analysis_dat_legacy21.RData` | Prepared analysis dataset for legacy BTW 2002–2021 replication pipeline |
+| `Treatment_WK_pre2025_from_git.xlsx` | Recovered legacy treatment workbook used in original 2021-based models |
+
+**Note:** All Politbarometer and Bundeswahlleiter election data files (2002–2021) in this repository support both the current analysis pipeline and the legacy replication runs. Individual-year Politbarometer files are necessary to construct the candidate-coverage treatment variable from survey responses about *Spitzenkandidaten / Kanzlerkandidaten* in each constituency.
 
 ### `BTW_Strukturdaten/`
 
