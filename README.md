@@ -68,7 +68,6 @@ Individual-year Politbarometer survey files from GESIS are included in `Data/pol
 | `Wahlkreis_names.xlsx` | Constituency name lookup |
 | `data_now_WK_Einteilung.xlsx` | Wahlkreis assignment table |
 | `ModelSummaries.xlsx` | Model coefficient summary table |
-| `coverage_matrix.md` | Candidate coverage matrix |
 
 ### `BTW_Strukturdaten/`
 
