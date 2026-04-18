@@ -49,7 +49,6 @@ Individual-year Politbarometer survey files from GESIS are included in `Data/pol
 | `Analyse_FE.Rmd` | Fixed-effects (FE) regression models |
 | `Analyse_FE_RE.Rmd` / `Analyse_FE_RE_25.Rmd` | FE/RE comparison models |
 | `Visualization_FD.Rmd` | Coefficient plots and result visualizations |
-| `Coverage_Matrix.Rmd` | Politbarometer candidate coverage matrix |
 | `Table_Generator.Rmd` | LaTeX/HTML table output |
 | `candidate_verification.md` | Sourced verification of all SK/KK (BTW 2002–2021) |
 | `data_inspection_summary.txt` | Column and NA summary of processed datasets |
