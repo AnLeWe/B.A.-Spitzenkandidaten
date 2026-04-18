@@ -52,6 +52,7 @@ Individual-year Politbarometer survey files from GESIS are included in `Data/pol
 | `Table_Generator.Rmd` | LaTeX/HTML table output |
 | `candidate_verification.md` | Sourced verification of all SK/KK (BTW 2002–2021) |
 | `data_inspection_summary.txt` | Column and NA summary of processed datasets |
+| `Analysis_21_vs_25_Differences.md` | Traced comparison of 2021 legacy vs 2025 pipelines, including masking and turnout-case behavior |
 
 ### `Legacy_Replication/`
 
