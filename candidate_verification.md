@@ -2,6 +2,20 @@
 
 Verification of official party Spitzenkandidaten (SK) / Kanzlerkandidaten (KK) for all federal elections relevant to this project, with citable sources for each candidate.
 
+This file also absorbs the compact candidate-coverage overview that was previously kept separately.
+
+## Coverage Summary at a Glance
+
+| Year | Main coverage issue in Politbarometer |
+|---|---|
+| 2002 | Gabi Zimmer is absent; Gregor Gysi appears but was not the official PDS SK |
+| 2009 | Renate Künast and Gregor Gysi are absent |
+| 2013 | Katrin Göring-Eckardt is absent; Sahra Wagenknecht is not an official SK |
+| 2017 | Katrin Göring-Eckardt, Dietmar Bartsch, Alice Weidel, and Alexander Gauland are absent |
+| 2021 | Janine Wissler, Dietmar Bartsch, Alice Weidel, and Tino Chrupalla are absent; Sahra Wagenknecht appears but was not an official SK |
+
+The detailed candidate-by-candidate verification below remains the authoritative record.
+
 ---
 
 ## BTW 2002
