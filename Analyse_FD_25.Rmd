@@ -38,7 +38,7 @@ See below what value corresponds to what party selection.
 ## Party positions: 1=SPD, 2=CDU/CSU, 3=GRUENE, 4=FDP, 5=AfD, 6=DIE LINKE, 7=BSW
 
 if (party.selec.switch==1) party.selection <- c(1:7)       # All parties: S C G F A L B
-if (party.selec.switch==2) party.selection <- c(1:3)       # SPD, CDU/CSU, GRUENE (GRUENE in 2021+, AfD in 2025 only)
+if (party.selec.switch==2) party.selection <- c(1:3,5)     # SPD, CDU/CSU, GRUENE, AfD (GRUENE in 2021+, AfD in 2025 only)
 if (party.selec.switch==3) party.selection <- c(3:7)       # Without SPD and CDU/CSU (GRUENE pre-2021, AfD pre-2025)
 if (party.selec.switch==4) party.selection <- c(1,3:7)     # Without CDU/CSU
 if (party.selec.switch==5) party.selection <- c(2:7)       # Without SPD
@@ -270,19 +270,19 @@ if (turnout.switch == 0){
 table(party.index)
 ```
 
-### Special treatment of Greens (2021, 2025) and AfD (major in 2025 for switch 2, pre-2025 for switch 3)
+### Special treatment of Greens and AfD across major/minor specifications
 
 ```{r}
 if (party.selec.switch==2) {
-  # Keep GRUENE only 2021+
+  # Major-party specification: keep GRUENE only in 2021 and 2025
   all.rel.votes.fd[party.index=="GRU" & year.index < 2021] <- NA
-  # Keep AfD only in 2025
+  # Major-party specification: keep AfD only in 2025
   all.rel.votes.fd[party.index=="AFD" & year.index < 2025] <- NA
 }
 if (party.selec.switch==3) {
-  # Keep GRUENE only pre-2021 (2017 and earlier)
+  # Minor-party specification: keep GRUENE only pre-2021 (2017 and earlier)
   all.rel.votes.fd[party.index=="GRU" & year.index >= 2021] <- NA
-  # Keep AfD only pre-2025 years
+  # Minor-party specification: keep AfD only pre-2025 years
   all.rel.votes.fd[party.index=="AFD" & year.index >= 2025] <- NA
 }
 
