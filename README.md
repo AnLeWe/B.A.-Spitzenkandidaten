@@ -53,6 +53,18 @@ Individual-year Politbarometer survey files from GESIS are included in `Data/pol
 | `candidate_verification.md` | Sourced verification of all SK/KK (BTW 2002–2021) |
 | `data_inspection_summary.txt` | Column and NA summary of processed datasets |
 
+### `Legacy_Replication/`
+
+This folder contains the runnable legacy BTW 2002–2021 replication pipeline. It is separate from the main current analysis scripts and is used to reproduce the earlier 2021-based results with the recovered treatment workbook and legacy data objects.
+
+| File | Description |
+|---|---|
+| `Data_Prep_legacy_21.Rmd` / `.html` | Legacy data preparation for BTW 2002–2021 |
+| `Analyse_FD_legacy_replication.Rmd` / `.html` | Legacy first-differences replication analysis |
+| `Visualization_FD_legacy_replication_full.Rmd` / `.html` | Legacy replication figures and result visualizations |
+
+The final replicated figures are written to `Outputs/Estimation_Results_21/Legacy_Replication/Figures/`.
+
 ### `Data/`
 
 | Path | Contents |
@@ -79,6 +91,8 @@ Structural data CSVs from the Bundeswahlleiter for 2002, 2005, 2009, 2013, 2017,
 |---|---|
 | `Estimation_Results_21/` | FD/FE estimation results, exogeneity checks, incumbency models, and figures for BTW 2002–2021 |
 | `Estimation_Results_21/Figures/` | Coefficient plots and visualizations |
+| `Estimation_Results_21/Legacy_Replication/` | Legacy 2021 replication outputs and rerun artifacts |
+| `Estimation_Results_21/Legacy_Replication/Figures/` | Final legacy replication figures |
 | `Estimation_Results_25/First_Differencing/` | FD estimation results including BTW 2025 |
 
 ### `Karten_WK/`
