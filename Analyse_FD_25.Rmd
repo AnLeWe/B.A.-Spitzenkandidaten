@@ -26,7 +26,7 @@ save.outputs <- 1
 ## Switch for party selection and spill over
  
 ```{r}
-party.selec.switch <- 1
+party.selec.switch <- 1 # see below for options
 spill.over.switch <- 0 # 1: with spill over
 turnout.switch <- 0 # 1: turnout analysis
 ```
@@ -34,27 +34,12 @@ turnout.switch <- 0 # 1: turnout analysis
 See below what value corresponds to what party selection.
 
 ```{r}
-# OLD !!!
-
-#if (party.selec.switch==1) party.selection <- c(1:6)      # S A F L G 
-#if (party.selec.switch==2) party.selection <- c(1:2,6)      # nur C und S + G (2021)
-#if (party.selec.switch==3) party.selection <- c(3:6)      # ohne C und S und G (2021)
-#if (party.selec.switch==4) party.selection <- c(2:6)      # ohne C
-#if (party.selec.switch==5) party.selection <- c(1,3:6)    # ohne S
-#if (party.selec.switch==6) party.selection <- c(1:3,5:6) # ohne F
-#if (party.selec.switch==7) party.selection <- c(1:4,6)    # ohne Linke
-#if (party.selec.switch==8) party.selection <- c(1:5)     # ohne G
-#if (party.selec.switch==9) party.selection <- c(1:2,4:6)  # ohne AfD
-#if (party.selec.switch==10) party.selection <- c(2,4:6)    # ohne C und A
-#if (party.selec.switch==11) party.selection <- c(3:4,6)    # ohne C, S und L
-
-
 ## Do not select only one party. This won't work!
 ## Party positions: 1=SPD, 2=CDU/CSU, 3=GRUENE, 4=FDP, 5=AfD, 6=DIE LINKE, 7=BSW
 
 if (party.selec.switch==1) party.selection <- c(1:7)       # All parties: S C G F A L B
-if (party.selec.switch==2) party.selection <- c(1:3)       # SPD, CDU/CSU, GRUENE (in 21, 25 only)
-if (party.selec.switch==3) party.selection <- c(4:7)       # FDP, AfD, DIE LINKE, BSW , G (without SPD, CDU/CSU, GRUENE (in 21, 25))
+if (party.selec.switch==2) party.selection <- c(1:3,5)     # SPD, CDU/CSU, GRUENE, AfD (GRUENE in 2021+, AfD in 2025 only)
+if (party.selec.switch==3) party.selection <- c(3:7)       # Without SPD and CDU/CSU (GRUENE pre-2021, AfD pre-2025)
 if (party.selec.switch==4) party.selection <- c(1,3:7)     # Without CDU/CSU
 if (party.selec.switch==5) party.selection <- c(2:7)       # Without SPD
 if (party.selec.switch==6) party.selection <- c(1:3,5:7)   # Without FDP
@@ -208,14 +193,14 @@ apply(all.treat.incumb.fd, 3, table)
 
 ```{r}
 #  Check 2002 CDU Zweitstimmen treatment 
-table(all.treat.dummy[, 2, 2, 7])  # CDU, Zweitstimmen, 2002
+#table(all.treat.dummy[, 2, 2, 7])  # CDU, Zweitstimmen, 2002
 
 # Check 2005 CDU Zweitstimmen treatment  
-table(all.treat.dummy[, 2, 2, 6])  # CDU, Zweitstimmen, 2005
+#table(all.treat.dummy[, 2, 2, 6])  # CDU, Zweitstimmen, 2005
 # Should show: 0s and 1s
 
 # Check FD for CDU Zweitstimmen 2005-2002
-table(all.treat.dummy.fd[, 2, 2, 6])  # Should show -1, 0, 1
+#table(all.treat.dummy.fd[, 2, 2, 6])  # Should show -1, 0, 1
 ```
 
 The resulting all.treat.dummy.fd has:
@@ -274,7 +259,7 @@ if (turnout.switch == 0){
   # Party order in arrays: SPD, CDU/CSU, GRUENE, FDP, AfD, DIE LINKE, BSW
   party.labels <- c("SPD", "CDU", "GRU", "FDP", "AFD", "LIN", "BSW")[party.selection]
   
-  for (i.party in 1:length(party.selection)){
+  for (i.party in seq_along(party.selection)){
     party.index[, i.party, , ] <- party.labels[i.party]
   }
 } else {
@@ -285,16 +270,20 @@ if (turnout.switch == 0){
 table(party.index)
 ```
 
-### Special treatment of Greens (2021, 2025)
+### Special treatment of Greens and AfD across major/minor specifications
 
 ```{r}
 if (party.selec.switch==2) {
-  # Keep only 2021+
+  # Major-party specification: keep GRUENE only in 2021 and 2025
   all.rel.votes.fd[party.index=="GRU" & year.index < 2021] <- NA
+  # Major-party specification: keep AfD only in 2025
+  all.rel.votes.fd[party.index=="AFD" & year.index < 2025] <- NA
 }
 if (party.selec.switch==3) {
-  # Keep only pre-2021 (2017 and earlier)
+  # Minor-party specification: keep GRUENE only pre-2021 (2017 and earlier)
   all.rel.votes.fd[party.index=="GRU" & year.index >= 2021] <- NA
+  # Minor-party specification: keep AfD only pre-2025 years
+  all.rel.votes.fd[party.index=="AFD" & year.index >= 2025] <- NA
 }
 
 ```
@@ -499,38 +488,38 @@ plot(studres(lm.out) ~ fitted(lm.out),
 abline(h = 0, lty = 2)
 ```
 
-```{r , include=FALSE}
+```{r }
 ## Diagnostic Tests
-print("Diagnostic Tests")
+#print("Diagnostic Tests")
 
 
-for (i.smdpr in 1:2){
-  if (i.smdpr == 1){
-    lm.out <- all.results.smd[[1]]
-    temp.dat <- all.results.smd[[3]]
-  } else {
-    lm.out <- all.results.pr[[1]]
-    temp.dat <- all.results.pr[[3]]
-  }
+#for (i.smdpr in 1:2){
+#  if (i.smdpr == 1){
+#    lm.out <- all.results.smd[[1]]
+#    temp.dat <- all.results.smd[[3]]
+#  } else {
+#   lm.out <- all.results.pr[[1]]
+#    temp.dat <- all.results.pr[[3]]
+#  }
   
-  print("")
-  print(c("ERSTSTIMME", "ZWEITSTIMME")[i.smdpr])
-  print("")
+#  print("")
+#  print(c("ERSTSTIMME", "ZWEITSTIMME")[i.smdpr])
+#  print("")
   
   # Breusch-Pagan Test
-  print("Breusch-Pagan Test (Heteroskedasticity):")
-  bp_test <- bptest(lm.out)
-  print(bp_test)
+#  print("Breusch-Pagan Test (Heteroskedasticity):")
+#  bp_test <- bptest(lm.out)
+#  print(bp_test)
   
   # Visual diagnostic
-  par(mfrow = c(2, 2))
-  plot(lm.out)
-  par(mfrow = c(1, 1))
+#  par(mfrow = c(2, 2))
+#  plot(lm.out)
+#  par(mfrow = c(1, 1))
   
   # Shapiro-Wilk (normality)
-  print("Shapiro-Wilk Test (Normality of Residuals):")
-  shapiro.test(sample(residuals(lm.out), 5000))  # if n > 5000
-}
+#  print("Shapiro-Wilk Test (Normality of Residuals):")
+#  shapiro.test(sample(residuals(lm.out), 5000))  # if n > 5000
+#}
 ```
 
 
@@ -691,7 +680,8 @@ for (i.smdpr in 1:2){  # Loop over Erst- and Zweitstimme
   if (i.smdpr == 2) all.results.t1.pr <- all.results.t1
 }
 
-save(all.results.t1.smd,
+if (save.outputs == 1) {
+  save(all.results.t1.smd,
      all.results.t1.pr,
      file = paste0(out_dir, "party.selec",
                    party.selec.switch,
@@ -701,5 +691,6 @@ save(all.results.t1.smd,
                    "_exgnt_",
                    format(Sys.Date(), "%Y-%m-%d"),
                    ".RData"))
+  }
 
 ```
