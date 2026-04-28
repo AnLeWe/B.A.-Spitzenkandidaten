@@ -368,6 +368,8 @@ if (save.outputs == 1) {
 
 ## First difference models
 
+### 1. Data preparation
+
 ```{r}
 library(sandwich)
 library(lmtest)
@@ -375,8 +377,11 @@ library(lmtest)
 # Optionally: previousl we used HC SEs. But those may not adequately deal with the autocorrelation.
 # Why not clustered SEs by constituency? Uncomment that option, and comment out the HC approach, if wanted.
 
+# Create lists to store data and results for both vote types
+lm.dat.list <- vector("list", 2)
+names(lm.dat.list) <- c("FPTP", "PR")
+
 for (i.smdpr in 1:2){  # first/second vote
-  all.results <- vector("list", 5)  # list for results
   votes.in.array <- all.rel.votes.fd[, , i.smdpr, ]
   votes <- c(all.rel.votes.fd[, , i.smdpr, ])
   treat <- c(all.treat.dummy.fd[, , i.smdpr, ])
@@ -393,7 +398,7 @@ for (i.smdpr in 1:2){  # first/second vote
   cross.treat.incumb <- c(all.treat.incumb.fd[, , c(2,1)[i.smdpr], ])
   
   # Each of the 299 constituencies appears multiple times (once per party per time period)
-  constituency <- rep(1:299, times = length(party.selection) * 6) # new
+  constituency <- rep(1:299, times = length(party.selection) * 6)
   
   lm.dat <- cbind(votes, treat, cross.treat, treat.incumb, cross.treat.incumb)
   lm.dat <- as.data.frame(lm.dat)
@@ -404,10 +409,68 @@ for (i.smdpr in 1:2){  # first/second vote
   #constituency <- c(all.wkr.index[, , i.smdpr, 1:6])
   
   # *** ADD THIS LINE TO EXCLUDE 2025 ***
-  lm.dat <- lm.dat[lm.dat$year != 2025, ]
+  #lm.dat <- lm.dat[lm.dat$year != 2025, ]
   lm.dat <- na.omit(lm.dat)
   
-  ## Model 
+  # Store in list for later use
+  lm.dat.list[[i.smdpr]] <- lm.dat
+}
+
+cat("\nData preparation complete. lm.dat.list created with", length(lm.dat.list), "elements.\n")
+```
+
+### 2. Data checking and analysis
+
+```{r}
+for (i.smdpr in 1:2){  # first/second vote
+  lm.dat <- lm.dat.list[[i.smdpr]]
+  vote.type <- c("Erststimme (FPTP)", "Zweitstimmen (PR)")[i.smdpr]
+  
+  cat("\n=== Data Investigation for", vote.type, "===\n")
+  
+  # 1. Summary statistics
+  cat("\nDimensions of lm.dat:", nrow(lm.dat), "observations,", ncol(lm.dat), "variables\n")
+  cat("Missing values (treatment):", sum(is.na(lm.dat$treat)), "\n")
+  cat("Missing values (votes):", sum(is.na(lm.dat$votes)), "\n")
+  
+  # 2. Observations per year, party, and tier
+  cat("\n--- Observations by Year and Party ---\n")
+  obs.by.year.party <- xtabs(~year + party, data = lm.dat)
+  print(obs.by.year.party)
+  cat("\nTotal observations by year:\n")
+  print(rowSums(obs.by.year.party))
+  
+  # 3. Treatment variable counts
+  cat("\n--- Treatment Variable Counts ---\n")
+  cat("Distribution of treatment variable:\n")
+  print(table(lm.dat$treat, useNA = "ifany"))
+  cat("\nTreatment: +1 =", sum(lm.dat$treat == 1, na.rm = TRUE), "observations\n")
+  cat("Treatment: -1 =", sum(lm.dat$treat == -1, na.rm = TRUE), "observations\n")
+  cat("Treatment:  0 =", sum(lm.dat$treat == 0, na.rm = TRUE), "observations\n")
+  
+  # 4. Cross-tabulation: Treatment by Year
+  cat("\n--- Treatment by Year ---\n")
+  treat.by.year <- xtabs(~year + treat, data = lm.dat)
+  print(treat.by.year)
+  
+  # 5. Cross-tabulation: Treatment by Party
+  cat("\n--- Treatment by Party ---\n")
+  treat.by.party <- xtabs(~party + treat, data = lm.dat)
+  print(treat.by.party)
+}
+```
+
+### 3. Estimation
+
+```{r}
+for (i.smdpr in 1:2){  # first/second vote
+  lm.dat <- lm.dat.list[[i.smdpr]]
+  vote.type <- c("Erststimme (FPTP)", "Zweitstimmen (PR)")[i.smdpr]
+  
+  cat("\n\n=== Estimation for", vote.type, "===\n")
+  all.results <- vector("list", 5)  # list for results
+  votes.in.array <- all.rel.votes.fd[, , i.smdpr, ]
+  
   print(c("DV: Erststimme", "DV: Zweitstimme")[i.smdpr])
   if (turnout.switch == 0){
     print(summary(lm.out <- lm(votes ~ treat +
