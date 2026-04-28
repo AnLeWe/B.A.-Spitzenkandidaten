@@ -404,6 +404,7 @@ for (i.smdpr in 1:2){  # first/second vote
   lm.dat <- as.data.frame(lm.dat)
   lm.dat$year <- year
   lm.dat$party <- party
+  lm.dat$wkr.name <- c(sapply(1:6, function(d) rep(all.wkr.name[, d], times = length(party.selection))))
   #lm.dat$constituency <- constituency  # NEW: Add constituency ID
   #or??
   #constituency <- c(all.wkr.index[, , i.smdpr, 1:6])
@@ -459,6 +460,26 @@ for (i.smdpr in 1:2){  # first/second vote
   print(treat.by.party)
 }
 ```
+
+### 2a Listing up the treated districts
+
+```{r}
+for (i.smdpr in 1:1){  # Only first vote 
+  lm.dat <- lm.dat.list[[i.smdpr]]
+  vote.type <- c("Erststimme (FPTP)", "Zweitstimmen (PR)")[i.smdpr]
+  
+  cat("\n=== Treated Districts for", vote.type, "===\n")
+  
+  treated.districts <- (lm.dat[lm.dat$treat == 1,c("treat","party","wkr.name")])
+  cat("Treated districts (treat = +1):\n")
+  print(treated.districts)
+  
+  treated.districts.neg <- (lm.dat[lm.dat$treat == -1,c("treat","party","wkr.name")])
+  cat("\nTreated districts (treat = -1):\n")
+  print(treated.districts.neg)
+}
+
+
 
 ### 3. Estimation
 
