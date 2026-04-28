@@ -133,7 +133,9 @@ We create the first differences:
 # We can compute FD for years 1-6 (2025, 2021, 2017, 2013, 2009, 2005)
 # No FD for year 7 (2002) because there's no "previous" data
 
-all.rel.votes.fd <- all.rel.votes[, , , 1:6, 1, drop=FALSE] - 
+# data_then is already aligned to the corresponding current-year districts
+# in Data_Prep.Rmd, so row-wise subtraction is the intended operation.
+all.rel.votes.fd <- all.rel.votes[, , , 1:6, 1, drop=FALSE] -
                     all.rel.votes[, , , 1:6, 2, drop=FALSE]
 
 # Note that there will be no FD for 2002, therefore we have n(year) = 6
@@ -176,12 +178,15 @@ if (turnout.switch == 0){
       array(NA, dim = c(299, 1, 2, 6))
 }
 
-# Compute first differences for treatments
+# Compute first differences for treatments with district matching across years
+simple.district.idx <- all.wkr.index[, 1, 1, ]
 for (i.time in 1:6){
-  all.treat.dummy.fd[, , , i.time] <-  
-    all.treat.dummy[, , , i.time] - all.treat.dummy[, , , i.time + 1] 
-  all.treat.incumb.fd[, , , i.time] <-  
-    all.treat.incumb[, , , i.time] - all.treat.incumb[, , , i.time + 1] 
+  key <- match(simple.district.idx[, i.time], simple.district.idx[, i.time + 1])
+
+  all.treat.dummy.fd[, , , i.time] <-
+    all.treat.dummy[, , , i.time] - all.treat.dummy[key, , , i.time + 1]
+  all.treat.incumb.fd[, , , i.time] <-
+    all.treat.incumb[, , , i.time] - all.treat.incumb[key, , , i.time + 1]
 }
 
 # Check first difference distributions
@@ -470,15 +475,15 @@ for (i.smdpr in 1:1){  # Only first vote
   
   cat("\n=== Treated Districts for", vote.type, "===\n")
   
-  treated.districts <- (lm.dat[lm.dat$treat == 1,c("treat","party","wkr.name")])
+  treated.districts <- (lm.dat[lm.dat$treat == 1,c("treat","party","year","wkr.name")])
   cat("Treated districts (treat = +1):\n")
   print(treated.districts)
   
-  treated.districts.neg <- (lm.dat[lm.dat$treat == -1,c("treat","party","wkr.name")])
+  treated.districts.neg <- (lm.dat[lm.dat$treat == -1,c("treat","party","year","wkr.name")])
   cat("\nTreated districts (treat = -1):\n")
   print(treated.districts.neg)
 }
-
+```
 
 
 ### 3. Estimation
