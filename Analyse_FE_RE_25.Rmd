@@ -270,31 +270,37 @@ options(max.print=100)
 Checking residuals
 
 ```{r}
+par(mfrow = c(1, 2), mar = c(4, 4.5, 3, 2))
 
-results.te <- all.results.smd[[1]] # nur für Erststimme? 
-
-#plot(results.te)
-
-
-data.te <- all.results.smd[[3]]
-
-data.te <- data.te[!is.na(data.te$votes)&!is.na(data.te$last.votes),]
-dim(data.te)
-
-
-residuals <- residuals(results.te)
-predicted <- predict(results.te)
-
-length(residuals)
-
-
-plot(residuals ~ data.te$treat)
-tapply(residuals , as.factor( data.te$treat),mean)
-
-
-
+for (i.smdpr in 1:2) {
+  if (i.smdpr == 1) {
+    results.te <- all.results.smd[[1]]
+    data.te <- all.results.smd[[3]]
+    vote.label <- "FPTP"
+  } else {
+    results.te <- all.results.pr[[1]]
+    data.te <- all.results.pr[[3]]
+    vote.label <- "PR"
+  }
+  
+  data.te <- data.te[!is.na(data.te$votes) & !is.na(data.te$last.votes), ]
+  
+  residuals <- residuals(results.te)
+  
+  boxplot(residuals ~ data.te$treat,
+          main = paste("Residuals:", vote.label),
+          xlab = "Treatment", ylab = "Residuals",
+          col = c("#E8F4F8", "#B8D4E8"),
+          border = "#2C5F7C", las = 1)
+  
+  abline(h = 0, lty = 2, col = "gray50")
+  grid(nx = NA, ny = NULL, col = "gray90", lty = 1)
+  
+  means <- tapply(residuals, as.factor(data.te$treat), mean)
+  print(paste(vote.label, "- Mean residuals by treatment:"))
+  print(means)
+}
 ```
-
 ## Probably needs UPDATE FROM HERE
 
 ### Plotting the actual votes, predicted votes and residuals for treated district
