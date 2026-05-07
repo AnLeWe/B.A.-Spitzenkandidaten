@@ -27,7 +27,7 @@ save.outputs <- 1
  
 ```{r}
 party.selec.switch <- 1 # see below for options
-spill.over.switch <- 0 # 1: with spill over
+spill.over.switch <- 1 # 1: with spill over
 turnout.switch <- 0 # 1: turnout analysis
 ```
 
@@ -91,30 +91,31 @@ all.total has 5 dimensions:
 * **Year** (1 … 7): 2025, 2021, 2017, 2013, 2009, 2005, 2002
 * **Current or previous results** (1, 2)
 
-all.treat has 4 dimensions:
+all.treat has 5 dimensions:
 * **Constituencies** (1 … 299)
 * **Parties** (1 … 7): S C G F A L B
 * **First or second vote** (1, 2)
 * **Year** (1 … 7): 2025, 2021, 2017, 2013, 2009, 2005, 2002
+* **Current or previous results** (1, 2)
 
 ```{r}
 if (turnout.switch == 0){
   # Normal case: analyzing vote shares by party
   all.abs.votes <- all.abs.votes[, party.selection, , , ]
-  all.treat     <- all.treat[, party.selection, , ]
+  all.treat     <- all.treat[, party.selection, , , ]
   all.rel.votes <- all.abs.votes /
-    all.abs.total[, rep(vote.denom, length(party.selection)), , , , drop=FALSE] 
+    all.abs.total[, rep(vote.denom, length(party.selection)), , , , drop=FALSE]
 } else {
   # Turnout analysis: treating turnout as the dependent variable
   all.abs.votes <- all.abs.total[, 2, , , , drop=FALSE]  # Waehlende (turnout)
-  all.treat     <- all.treat[, party.selection, , ]
-  
+  all.treat     <- all.treat[, party.selection, , , ]
+
   # Collapse treatment: if any party leader ran, treatment = 1
-  temp <- apply(all.treat, c(1, 3, 4), max)
-  all.treat <- array(temp, dim=c(299, 1, 2, 7))
-  
-  all.rel.votes <- all.abs.votes / 
-    all.abs.total[, rep(vote.denom, 1), , , , drop=FALSE] 
+  temp <- apply(all.treat, c(1, 3, 4, 5), max)
+  all.treat <- array(temp, dim=c(299, 1, 2, 7, 2))
+
+  all.rel.votes <- all.abs.votes /
+    all.abs.total[, rep(vote.denom, 1), , , , drop=FALSE]
 }
 
 ```
@@ -166,28 +167,17 @@ apply(all.treat.dummy, 3, table)
 table(all.treat.incumb)
 apply(all.treat.incumb, 3, table)
 
-# Create first difference arrays for treatments
-# Now 6 time periods (2025-2021, 2021-2017, 2017-2013, 2013-2009, 2009-2005, 2005-2002)
-if (turnout.switch == 0){
-  all.treat.dummy.fd <- 
-  all.treat.incumb.fd <- 
-      array(NA, dim = c(299, length(party.selection), 2, 6))
-} else {
-  all.treat.dummy.fd <- 
-  all.treat.incumb.fd <- 
-      array(NA, dim = c(299, 1, 2, 6))
-}
+# Treatment FD: mirrors vote FD exactly.
+# dim5=1 = current-year treatment (data_treat ordering)
+# dim5=2 = previous-year treatment reordered to current-year rows (data_treat_then)
+# Row-wise subtraction is correct because both dims share the same row alignment.
+all.treat.dummy.fd <- all.treat.dummy[,,,1:6,1,drop=FALSE] -
+                      all.treat.dummy[,,,1:6,2,drop=FALSE]
+all.treat.dummy.fd <- array(all.treat.dummy.fd, dim = dim(all.treat.dummy.fd)[1:4])
 
-# Compute first differences for treatments with district matching across years
-simple.district.idx <- all.wkr.index[, 1, 1, ]
-for (i.time in 1:6){
-  key <- match(simple.district.idx[, i.time], simple.district.idx[, i.time + 1])
-
-  all.treat.dummy.fd[, , , i.time] <-
-    all.treat.dummy[, , , i.time] - all.treat.dummy[key, , , i.time + 1]
-  all.treat.incumb.fd[, , , i.time] <-
-    all.treat.incumb[, , , i.time] - all.treat.incumb[key, , , i.time + 1]
-}
+all.treat.incumb.fd <- all.treat.incumb[,,,1:6,1,drop=FALSE] -
+                       all.treat.incumb[,,,1:6,2,drop=FALSE]
+all.treat.incumb.fd <- array(all.treat.incumb.fd, dim = dim(all.treat.incumb.fd)[1:4])
 
 # Check first difference distributions
 table(all.treat.dummy.fd)
@@ -379,8 +369,8 @@ if (save.outputs == 1) {
 library(sandwich)
 library(lmtest)
 
-# Optionally: previousl we used HC SEs. But those may not adequately deal with the autocorrelation.
-# Why not clustered SEs by constituency? Uncomment that option, and comment out the HC approach, if wanted.
+# Optionally: previously we used HC SEs. But those may not adequately deal with the autocorrelation.
+# Why not clustered SEs by constituency?
 
 # Create lists to store data and results for both vote types
 lm.dat.list <- vector("list", 2)
@@ -403,19 +393,16 @@ for (i.smdpr in 1:2){  # first/second vote
   cross.treat.incumb <- c(all.treat.incumb.fd[, , c(2,1)[i.smdpr], ])
   
   # Each of the 299 constituencies appears multiple times (once per party per time period)
-  constituency <- rep(1:299, times = length(party.selection) * 6)
-  
+  # Use actual array dim[2] so this works for both normal (n parties) and turnout (1) modes
+  n_series <- dim(all.treat.dummy.fd)[2]
+  constituency <- rep(1:299, times = n_series * 6)
+
   lm.dat <- cbind(votes, treat, cross.treat, treat.incumb, cross.treat.incumb)
   lm.dat <- as.data.frame(lm.dat)
   lm.dat$year <- year
   lm.dat$party <- party
-  lm.dat$wkr.name <- c(sapply(1:6, function(d) rep(all.wkr.name[, d], times = length(party.selection))))
-  #lm.dat$constituency <- constituency  # NEW: Add constituency ID
-  #or??
-  #constituency <- c(all.wkr.index[, , i.smdpr, 1:6])
-  
-  # *** ADD THIS LINE TO EXCLUDE 2025 ***
-  #lm.dat <- lm.dat[lm.dat$year != 2025, ]
+  lm.dat$wkr.name <- c(sapply(1:6, function(d) rep(all.wkr.name[, d], times = n_series)))
+
   lm.dat <- na.omit(lm.dat)
   
   # Store in list for later use
@@ -642,16 +629,25 @@ for (i.smdpr in 1:2){
     residuals <- array(residuals,
                        dim = c(dim(temp.depv)[1], 1, dim(temp.depv)[2]))
   }
-  
-  simple.district.idx <- all.wkr.index[, 1, 1, ]
-  
+  # Ensure residuals is always 3D — turnout mode drops the singleton party
+  # dimension when indexing temp.depv, yielding a 2D [299, 6] matrix.
+  if (length(dim(residuals)) == 2) {
+    residuals <- array(residuals, dim = c(dim(residuals)[1], 1, dim(residuals)[2]))
+  }
+
   # Stacking residuals at t and t-1
   ## Loop from BTW 2025 to 2005 (6 time periods, 5 pairs)
   current.resid <- past.resid <- residuals[, , 1:5, drop = FALSE]  # Changed from 1:4 to 1:5
-  
+
   for (i.btw in 1:5){  # Changed from 1:4 to 1:5
-    # Create the key to match the current and past districts
-    key <- match(simple.district.idx[, i.btw], simple.district.idx[, i.btw + 1])
+    # Match year i.btw rows to year i.btw+1 rows using eligible voters.
+    # data_then[curr_rows] carries the previous-year data in current-year row order,
+    # data_now[prev_rows] carries the previous year in its own order — matching on
+    # eligible voters identifies the same territory across both orderings.
+    curr_rows <- (1 + 299*(i.btw-1)):(299*i.btw)
+    prev_rows <- (1 + 299*i.btw):(299*(i.btw+1))
+    key <- match(paste(data_then[curr_rows, 4], data_then[curr_rows, 6], sep = "_"),
+                 paste(data_now[prev_rows,  4], data_now[prev_rows,  6], sep = "_"))
     past.resid[, , i.btw] <- residuals[key, , i.btw + 1]
   }
   
@@ -709,14 +705,34 @@ for (i.smdpr in 1:2){  # Loop over Erst- and Zweitstimme
   cross.treat.incumb.t1 <- all.treat.incumb.fd[, , c(2,1)[i.smdpr], 1:5, drop = FALSE]  # Changed from 1:4 to 1:5
   cross.treat.incumb.t1 <- array(cross.treat.incumb.t1, dim = dim(cross.treat.incumb.t1)[c(1,2,4)])
   
-  # We assign the correct district
-  simple.district.idx <- all.wkr.index[, 1, 1, ]
+  # Reorder t+1 treatment into year-t row positions using canonical territory IDs
+  # (same source as data_treat_then in Data_Prep.Rmd, forward direction).
+  # For each year i.btw, find which row in year i.btw-1 (t+1) holds the same
+  # territory as each row in year i.btw (t). Hybrid: canonical match where
+  # available, same-row fallback for boundary-change territories (NA key).
+  canon.idx <- all.wkr.index[, 1, 1, ]  # [299, 7]: canonical IDs, year index 1=2025..7=2002
   for (i.btw in 2:6){  # Changed from 2:5 to 2:6 (loop over btw2021 to btw2005)
-    key <- match(simple.district.idx[, i.btw], simple.district.idx[, i.btw - 1])
-    treat.t1[, , i.btw - 1] <- treat.t1[key, , i.btw - 1]
-    treat.incumb.t1[, , i.btw - 1] <- treat.incumb.t1[key, , i.btw - 1]
-    cross.treat.t1[, , i.btw - 1] <- cross.treat.t1[key, , i.btw - 1]
-    cross.treat.incumb.t1[, , i.btw - 1] <- cross.treat.incumb.t1[key, , i.btw - 1]
+    key     <- match(canon.idx[, i.btw], canon.idx[, i.btw - 1])
+    matched <- !is.na(key)
+    fallback <- seq_len(299)
+
+    reorder <- function(arr) {
+      out <- arr
+      if (is.null(dim(arr))) {
+        # vector: turnout mode drops the singleton party dimension
+        out[matched]  <- arr[key[matched]]
+        out[!matched] <- arr[fallback[!matched]]
+      } else {
+        out[matched, ]  <- arr[key[matched], ]
+        out[!matched, ] <- arr[fallback[!matched], ]
+      }
+      out
+    }
+
+    treat.t1[, , i.btw - 1]            <- reorder(treat.t1[, , i.btw - 1])
+    treat.incumb.t1[, , i.btw - 1]     <- reorder(treat.incumb.t1[, , i.btw - 1])
+    cross.treat.t1[, , i.btw - 1]      <- reorder(cross.treat.t1[, , i.btw - 1])
+    cross.treat.incumb.t1[, , i.btw - 1] <- reorder(cross.treat.incumb.t1[, , i.btw - 1])
   }
   treat.t1 <- c(treat.t1)
   cross.treat.t1 <- c(cross.treat.t1)
@@ -731,9 +747,9 @@ for (i.smdpr in 1:2){  # Loop over Erst- and Zweitstimme
   ## Model with cross treatment (contamination)
 
   print(c("DV: Erststimme", "DV: Zweitstimme")[i.smdpr])
-  if (party.selec.switch != 0){
+  if (party.selec.switch != 0 && turnout.switch == 0){
     print(summary(lm.out <- lm(votes ~ treat + treat.t1 +
-                                  #treat.incumb + 
+                                  #treat.incumb +
                                   #treat.incumb.t1 + # control for Incumbency
                                   cross.treat + cross.treat.t1 +
                                   #cross.treat.incumb + cross.treat.incumb.t1 +
@@ -741,7 +757,7 @@ for (i.smdpr in 1:2){  # Loop over Erst- and Zweitstimme
                                data = lm.dat)))
   } else {
     print(summary(lm.out <- lm(votes ~ treat + treat.t1 +
-                                  #treat.incumb + 
+                                  #treat.incumb +
                                   #treat.incumb.t1 + # control for Incumbency
                                   cross.treat + cross.treat.t1 +
                                   #cross.treat.incumb + cross.treat.incumb.t1 +
