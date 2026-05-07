@@ -290,7 +290,7 @@ if (party.selec.switch==3) {
 Descriptives for the FD and treatments
 
 ```{r}
-out_dir <- file.path("Outputs", "Estimation_Results_25", "First_Differencing", "Figures")
+out_dir <- file.path("BTW_2025", "Outputs", "First_Differencing", "Figures")
 years <- c(2025, 2021, 2017, 2013, 2009, 2005)
 
 # filename
@@ -529,7 +529,7 @@ for (i.smdpr in 1:2){  # first/second vote
 
 
 ```{r}
-out_dir <- file.path("Outputs", "Estimation_Results_25", "First_Differencing", "/")
+out_dir <- file.path("BTW_2025", "Outputs", "First_Differencing", "/")
 if (save.outputs == 1) {
   save(
     all.results.smd,
