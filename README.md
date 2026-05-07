@@ -45,24 +45,34 @@ Individual-year Politbarometer survey files from GESIS are included in `Data/pol
 |---|---|
 | `Data_Prep.Rmd` | Data cleaning and variable construction |
 | `Descriptive_Analysis.Rmd` | Descriptive statistics and summary tables |
-| `Analyse_FD.Rmd` / `Analyse_FD_25.Rmd` | First-differences (FD) regression models (BTW 2002–2021 / +2025) |
-| `Analyse_FE.Rmd` | Fixed-effects (FE) regression models |
-| `Analyse_FE_RE.Rmd` / `Analyse_FE_RE_25.Rmd` | FE/RE comparison models |
+| `Analyse_FD_25.Rmd` | First-differences (FD) regression models (BTW 2002–2025) |
+| `Analyse_FE_RE_25.Rmd` | FE/RE comparison models (BTW 2002–2025) |
 | `Visualization_FD.Rmd` | Coefficient plots and result visualizations |
 | `Table_Generator.Rmd` | LaTeX/HTML table output |
-| `candidate_verification.md` | Sourced verification of all SK/KK (BTW 2002–2021) |
+| `run_fd_combos.R` | Batch render script for all 9 FD switch combinations |
+
+### `docs/`
+
+| File | Description |
+|---|---|
+| `candidate_verification.md` | Sourced verification of all SK/KK direct candidacies (BTW 2002–2021) |
 | `data_inspection_summary.txt` | Column and NA summary of processed datasets |
-| `Analysis_21_vs_25_Differences.md` | Traced comparison of 2021 legacy vs 2025 pipelines, including masking and turnout-case behavior |
+| `Analysis_21_vs_25_Differences.md` | Traced comparison of 2021 legacy vs 2025 pipelines |
+| `Analysis_Implementation_Notes.md` | Treatment matching logic, data issues, and diagnostic notes |
 
 ### `Legacy_Replication/`
 
-This folder contains the runnable legacy BTW 2002–2021 replication pipeline. It is separate from the main current analysis scripts and is used to reproduce the earlier 2021-based results with the recovered treatment workbook and legacy data objects.
+Contains the runnable BTW 2002–2021 replication pipeline and archived pre-2025 analysis scripts.
 
 | File | Description |
 |---|---|
 | `Data_Prep_legacy_21.Rmd` / `.html` | Legacy data preparation for BTW 2002–2021 |
 | `Analyse_FD_legacy_replication.Rmd` / `.html` | Legacy first-differences replication analysis |
 | `Visualization_FD_legacy_replication_full.Rmd` / `.html` | Legacy replication figures and result visualizations |
+| `Analyse_FD.Rmd` / `.html` | Archived FD script (BTW 2002–2021, superseded by `Analyse_FD_25.Rmd`) |
+| `Analyse_FE.Rmd` | Archived FE script (superseded) |
+| `Analyse_FE_RE.Rmd` / `.html` | Archived FE/RE script (superseded by `Analyse_FE_RE_25.Rmd`) |
+| `Table_1.html` / `Table_2.html` | Archived table renders |
 
 The final replicated figures are written to `Outputs/Estimation_Results_21/Legacy_Replication/Figures/`.
 
