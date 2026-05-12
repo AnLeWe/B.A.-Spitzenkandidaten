@@ -290,8 +290,6 @@ for (i.smdpr in 1:2) {
   print(means)
 }
 ```
-
-
 ## Probably needs UPDATE FROM HERE
 
 ### Plotting the actual votes, predicted votes and residuals for treated district

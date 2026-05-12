@@ -41,7 +41,7 @@ data.date_switch <- format(Sys.Date()) # Set to the analysis run date
 ```{r}
 all.results <- NULL
 
-file.name.list <- dir("Outputs/Estimation_Results_25/First_Differencing/")
+file.name.list <- dir("BTW_2025/Outputs/First_Differencing/")
 
 latest_matching_file <- function(pattern, files) {
   matches <- grep(pattern, files, value = TRUE)
@@ -63,7 +63,7 @@ for (i.switch in 1:3) { # previously 1:9
           file.name.list
         )
         if (is.na(file.name)) next
-        load(file.path("Outputs/Estimation_Results_25/First_Differencing/", file.name))
+        load(file.path("BTW_2025/Outputs/First_Differencing/", file.name))
       } else {
         ## cases with spillover/turnout
         file.name <- latest_matching_file(
@@ -78,7 +78,7 @@ for (i.switch in 1:3) { # previously 1:9
         )
         
         if (!is.na(file.name)) {  # only if there are estimation results
-          load(file.path("Outputs/Estimation_Results_25/First_Differencing/", file.name))
+          load(file.path("BTW_2025/Outputs/First_Differencing/", file.name))
         } else {
           next  # if there are no estimation results, move to the next loop
         }
@@ -148,7 +148,7 @@ for (i.turnout in 0:1){
 
     title <- paste0("All_Estimated_Effects",c("","_on_Turnout")[i.turnout+1])
     # Create PDF file for the current voting scenario
-    pdf(file=paste0("Outputs/Estimation_Results_25/First_Differencing/Figures/",title,".pdf"),
+    pdf(file=paste0("BTW_2025/Outputs/First_Differencing/Figures/",title,".pdf"),
         width=8,
         height=5.5,
         pointsize = 13)#,
@@ -260,7 +260,7 @@ for (i.vote in 1:2){
                     c("cand","list")[i.cand],"on",
                     c("FPTP","PR")[i.vote])
     # Create PDF file for the current voting scenario
-    pdf(file=paste0("Outputs/Estimation_Results_25/First_Differencing/Figures/",title,".pdf"),
+    pdf(file=paste0("BTW_2025/Outputs/First_Differencing/Figures/",title,".pdf"),
         width=5,
         height=5.5,
         pointsize = 13)#,
@@ -392,7 +392,7 @@ for (i.vote.d in 1:2){# depvar is FPTP or PR
     if (i.vote.d==2 & i.vote.i==2) title <- "Listenpräsenz auf Zweitstimmenergebnis"
     
     # Create PDF file for the current voting scenario
-    pdf(file=paste0("Outputs/Estimation_Results_25/First_Differencing/Figures/",title,".pdf"),
+    pdf(file=paste0("BTW_2025/Outputs/First_Differencing/Figures/",title,".pdf"),
         width=12,
         height=9,
         pointsize = 13)

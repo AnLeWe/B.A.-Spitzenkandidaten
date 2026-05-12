@@ -1,0 +1,29 @@
+R Environment — Priming & Leader Effects Germany
+=================================================
+
+R version:  4.6.0 (2026-04-24)
+Platform:   aarch64-apple-darwin23 (macOS Sonoma 14.6.1)
+
+Key packages (versions from project R library):
+------------------------------------------------
+tidyverse            2.0.0
+fixest               (install from CRAN: install.packages("fixest"))
+modelsummary         (install from CRAN: install.packages("modelsummary"))
+haven                2.5.5
+readxl               1.4.5
+sandwich             3.1.1
+lmtest               0.9.40
+sf                   (install from CRAN: install.packages("sf"))
+spdep                (install from CRAN: install.packages("spdep"))
+rmarkdown            2.31
+knitr                1.51
+
+Note: fixest, modelsummary, sf, spdep are installed in the RStudio project
+library but not visible to the system Rscript. Run sessionInfo() from within
+RStudio after opening Priming-Leader-Effects-Germany.Rproj for exact versions.
+
+For a full reproducible environment snapshot, consider running:
+  install.packages("renv")
+  renv::init()
+  renv::snapshot()
+This creates renv.lock with pinned versions of all dependencies.

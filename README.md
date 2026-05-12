@@ -45,26 +45,57 @@ Individual-year Politbarometer survey files from GESIS are included in `Data/pol
 |---|---|
 | `Data_Prep.Rmd` | Data cleaning and variable construction |
 | `Descriptive_Analysis.Rmd` | Descriptive statistics and summary tables |
-| `Analyse_FD.Rmd` / `Analyse_FD_25.Rmd` | First-differences (FD) regression models (BTW 2002–2021 / +2025) |
-| `Analyse_FE.Rmd` | Fixed-effects (FE) regression models |
-| `Analyse_FE_RE.Rmd` / `Analyse_FE_RE_25.Rmd` | FE/RE comparison models |
+| `Analyse_FD_25.Rmd` | First-differences (FD) regression models (BTW 2002–2025) |
+| `Analyse_FE_RE_25.Rmd` | FE/RE comparison models (BTW 2002–2025) |
 | `Visualization_FD.Rmd` | Coefficient plots and result visualizations |
 | `Table_Generator.Rmd` | LaTeX/HTML table output |
-| `candidate_verification.md` | Sourced verification of all SK/KK (BTW 2002–2021) |
+| `run_fd_combos.R` | Batch render script for all 9 FD switch combinations |
+
+### `docs/`
+
+| File | Description |
+|---|---|
+| `candidate_verification.md` | Sourced verification of all SK/KK direct candidacies (BTW 2002–2021) |
 | `data_inspection_summary.txt` | Column and NA summary of processed datasets |
-| `Analysis_21_vs_25_Differences.md` | Traced comparison of 2021 legacy vs 2025 pipelines, including masking and turnout-case behavior |
+| `Analysis_21_vs_25_Differences.md` | Traced comparison of 2021 legacy vs 2025 pipelines |
+| `Analysis_Implementation_Notes.md` | Treatment matching logic, data issues, and diagnostic notes |
 
-### `Legacy_Replication/`
+### `BTW_2021/` — BTW 2002–2021 archive
 
-This folder contains the runnable legacy BTW 2002–2021 replication pipeline. It is separate from the main current analysis scripts and is used to reproduce the earlier 2021-based results with the recovered treatment workbook and legacy data objects.
+All scripts, outputs, and figures for the 2002–2021 analysis.
+
+**`BTW_2021/Legacy_Replication/`** — runnable replication pipeline and archived pre-2025 scripts:
 
 | File | Description |
 |---|---|
 | `Data_Prep_legacy_21.Rmd` / `.html` | Legacy data preparation for BTW 2002–2021 |
 | `Analyse_FD_legacy_replication.Rmd` / `.html` | Legacy first-differences replication analysis |
 | `Visualization_FD_legacy_replication_full.Rmd` / `.html` | Legacy replication figures and result visualizations |
+| `Analyse_FD.Rmd` / `.html` | Archived FD script (superseded by `Analyse_FD_25.Rmd`) |
+| `Analyse_FE.Rmd` | Archived FE script (superseded) |
+| `Analyse_FE_RE.Rmd` / `.html` | Archived FE/RE script (superseded by `Analyse_FE_RE_25.Rmd`) |
 
-The final replicated figures are written to `Outputs/Estimation_Results_21/Legacy_Replication/Figures/`.
+**`BTW_2021/Outputs/`** — estimation results and figures for BTW 2002–2021:
+
+| Path | Contents |
+|---|---|
+| `First_Differencing/` | FD estimation results |
+| `Figures/` | Coefficient plots and visualizations (incl. H3a/H3b) |
+| `Exogeneity/` | Exogeneity check results |
+| `FD_Incumbency/` | Incumbency model results |
+| `Legacy_Replication/` | Legacy replication outputs and rerun artifacts |
+| `Legacy_Replication/Figures/` | Final legacy replication figures |
+
+### `BTW_2025/` — BTW 2002–2025 current analysis
+
+**`BTW_2025/Outputs/`** — estimation results for the current analysis including BTW 2025:
+
+| Path | Contents |
+|---|---|
+| `First_Differencing/` | FD estimation results and `.RData` files |
+| `First_Differencing/Figures/` | Coefficient plots and result visualizations |
+| `Fixed_Effects/` | FE estimation results |
+| `Diagnostics/` | Treatment variable diagnostics (2021 vs 2025 comparison) |
 
 ### `Data/`
 
@@ -93,21 +124,12 @@ The final replicated figures are written to `Outputs/Estimation_Results_21/Legac
 
 Structural data CSVs from the Bundeswahlleiter for 2002, 2005, 2009, 2013, 2017, 2021, and 2025.
 
-### `Outputs/`
-
-| Path | Contents |
-|---|---|
-| `Estimation_Results_21/` | FD/FE estimation results, exogeneity checks, incumbency models, and figures for BTW 2002–2021 |
-| `Estimation_Results_21/Figures/` | Coefficient plots and visualizations |
-| `Estimation_Results_21/Legacy_Replication/` | Legacy 2021 replication outputs and rerun artifacts |
-| `Estimation_Results_21/Legacy_Replication/Figures/` | Final legacy replication figures |
-| `Estimation_Results_25/First_Differencing/` | FD estimation results including BTW 2025 |
-
 ### `Karten_WK/`
 
 Constituency map PDFs from the Bundeswahlleiter for BTW 2002–2021.
 
 ## Requirements
 
-- R >= 4.2
-- Key packages: `tidyverse`, `fixest`, `modelsummary`, `haven`, `sf`
+- R >= 4.2 (developed on R 4.6.0)
+- Key packages: `tidyverse`, `fixest`, `modelsummary`, `haven`, `readxl`, `sandwich`, `lmtest`, `sf`, `spdep`, `rmarkdown`
+- See `docs/r_session_info.txt` for versions. For a fully pinned environment, run `renv::init()` + `renv::snapshot()` from within the project.

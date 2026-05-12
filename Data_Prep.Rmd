@@ -718,10 +718,51 @@ treatment_assigned <- sapply(all.years, function(yr) {
 print(treatment_assigned)
 ```
 
+```{r}
+# Build data_treat_then: previous-year treatment in current-year row ordering.
+#
+# Two types of cross-year territory correspondence exist:
+#
+#   1. Stable renumbering: same geographic territory, WK number changed between
+#      elections (e.g. Trittin WK54→53, Gysi WK85→84). The Nr.XX canonical IDs
+#      in data_now_WK_Einteilung.xlsx sheet 6 are stable for these cases:
+#      Nr.XX[i] == Nr.YY[j] identifies the predecessor row j. Using the same
+#      row index i would pick the wrong territory.
+#
+#   2. Boundary change: the territory was redefined (minor boundary adjustment)
+#      and received a new canonical ID. The Nr.XX key returns NA for these rows.
+#      The WK number itself is stable (Nr.XX.orig == 1:299 for all years), so
+#      the direct row fallback (same row index = same WK number) gives the
+#      correct predecessor (e.g. Merkel CDU WK15: ran there in both 2009 and
+#      2013 despite canonical ID change 15→330).
+#
+# Hybrid rule: canonical match where available, direct row fallback for NA keys.
+
+nr_cols <- as.matrix(
+  read_xlsx("Data/data_now_WK_Einteilung.xlsx", sheet = 6)[,
+    paste0("Nr.", c("25", "21", "17", "13", "09", "05", "02"))]
+)
+
+data_treat_then <- data_treat
+
+for (t in 1:6) {
+  curr_rows <- (1 + 299*(t-1)):(299*t)
+  prev_rows <- (1 + 299*t):(299*(t+1))
+
+  key     <- match(nr_cols[, t], nr_cols[, t + 1])
+  matched <- !is.na(key)
+
+  # canonical predecessor for stable/renumbered territories
+  data_treat_then[curr_rows[matched],  ] <- data_treat[prev_rows[key[matched]], ]
+  # direct row (same WK number) for boundary-change territories
+  data_treat_then[curr_rows[!matched], ] <- data_treat[prev_rows[!matched], ]
+}
+```
+
 
 ## All Objects in the Array
 
-An array of absolute election results with five dimensions is created:
+`all.abs.votes`: An array of absolute election results with five dimensions is created:
 
 * **Constituencies** (1 … 299)
 * **Parties** (1 … 7): S C G F A L B
@@ -729,7 +770,7 @@ An array of absolute election results with five dimensions is created:
 * **Year** (1 … 7): 2025, 2021, 2017, 2013, 2009, 2005, 2002
 * **Current or previous results** (1, 2)
 
-An array of eligible voters and valid votes with five dimensions is created:
+`all.abs.total`: An array of eligible voters and valid votes with five dimensions is created:
 
 * **Constituencies** (1 … 299)
 * **Eligible voters, turnout, or valid votes** (1 … 3)
@@ -737,12 +778,13 @@ An array of eligible voters and valid votes with five dimensions is created:
 * **Year** (1 … 7): 2025, 2021, 2017, 2013, 2009, 2005, 2002
 * **Current or previous results** (1, 2)
 
-An array of the treatment with four dimensions is created:
+`all.treat`: An array of the treatment with five dimensions is created:
 
 * **Constituencies** (1 … 299)
 * **Parties** (1 … 7): S C G F A L B
 * **First or second vote** (1, 2)
 * **Year** (1 … 7): 2025, 2021, 2017, 2013, 2009, 2005, 2002
+* **Current or previous results** (1, 2) — dim 5=2 holds previous-year treatment reordered to current-year row positions via `data_treat_then`
 
 A matrix of constituency names (299 rows × 7 years)
 
@@ -774,7 +816,7 @@ A matrix of federal states (299 rows × 7 years)
 ```{r}
 all.abs.votes <- array(NA, dim=c(299, 7, 2, 7, 2))  # 7 parties, 7 years
 all.abs.total <- array(NA, dim=c(299, 3, 2, 7, 2))  # 7 years
-all.treat <- array(NA, dim=c(299, 7, 2, 7))         # 7 parties, 7 years
+all.treat     <- array(NA, dim=c(299, 7, 2, 7, 2))  # 7 parties, 7 years, current/previous
 all.wkr.name <- matrix(NA, nrow=299, ncol=7)        # 7 years
 all.land <- matrix(NA, nrow=299, ncol=7)            # 7 years
 
@@ -834,17 +876,13 @@ for (i.year in 1:7){ # 2025, 2021, 2017, 2013, 2009, 2005, 2002
 
     all.wkr.name[,i.year] <- unlist(temp.dat[,2])
     all.land[,i.year] <- unlist(temp.dat[,3])
+
+    # Treatment (mirrors vote filling: i.now.then=1 from data_treat, 2 from data_treat_then)
+    temp.treat <- if (i.now.then == 1) data_treat else data_treat_then
+    temp.treat  <- temp.treat[(1 + 299*(i.year-1)):(299*i.year), ]
+    all.treat[,,1, i.year, i.now.then] <- as.matrix(temp.treat[, seq(12, 24, by=2)])
+    all.treat[,,2, i.year, i.now.then] <- as.matrix(temp.treat[, seq(13, 25, by=2)])
   }
-  
-  temp.treat <- data_treat[(1+299*(i.year-1)):(299*i.year),] # 2025 for i.year=1, 2021 for i.year=2, etc.
-  
-  # Treatment
-  # First vote - 7 parties
-  all.treat[,,1,i.year] <- 
-    as.matrix(temp.treat[,seq(12, 24, by=2)])
-  # Second vote - 7 parties
-  all.treat[,,2,i.year] <-
-    as.matrix(temp.treat[,seq(13, 25, by=2)])
 }
 
 ```
@@ -877,12 +915,12 @@ all.abs.votes[1, 1, 2, 3, 1]
 data_now[599, "SPD Zweitstimmen"]
 
 # Check treatment for Fischer 2002 (constituency 184, GRUENE=position 3, Erststimmen)
-all.treat[184, 3, 1, 7]  # Should be 6
+all.treat[184, 3, 1, 7, 1]  # Should be 6 (dim5=1: current)
 
 # Check dimensions are correct
 dim(all.abs.votes)  # Should be: 299 7 2 7 2
 dim(all.abs.total)  # Should be: 299 3 2 7 2
-dim(all.treat)      # Should be: 299 7 2 7
+dim(all.treat)      # Should be: 299 7 2 7 2
 ```
 
 
@@ -895,7 +933,7 @@ wkr.assignment <- wkr.assignment[,paste0("Nr.",c("25","21","17","13","09","05","
 wkr.assignment <- as.matrix(wkr.assignment)
 
 
-all.wkr.index <- all.treat
+all.wkr.index <- all.treat[,,,,1]  # [299, 7, 2, 7] — 4D, current-year only
 for (i.party in 1:length(all.parties2)){
   for (i.smdpr in 1:2){
     all.wkr.index[,i.party,i.smdpr,] <- wkr.assignment
