@@ -4,6 +4,6 @@
 .Ruserdata
 .DS_Store
 *.Rproj
-Outputs/Estimation_Results_25/Fixed_Effects/*.RData
+/Outputs/
 .positai
 CLAUDE.md

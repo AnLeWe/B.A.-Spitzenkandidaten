@@ -335,13 +335,13 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
 
 ```{r}
-if (!dir.exists("../Outputs/Estimation_Results_21/Legacy_Replication")) {
-  dir.create("../Outputs/Estimation_Results_21/Legacy_Replication", recursive = TRUE)
+if (!dir.exists("../Outputs/Legacy_Replication")) {
+  dir.create("../Outputs/Legacy_Replication", recursive = TRUE)
 }
 
 save(all.results.smd,
      all.results.pr,
-  file=paste0("../Outputs/Estimation_Results_21/Legacy_Replication/Estimation_Results_PSelect",party.selec.switch,
+  file=paste0("../Outputs/Legacy_Replication/Estimation_Results_PSelect",party.selec.switch,
              "_denom",vote.denom,
              c("","_spillover")[spill.over.switch+1],
              c("","_turnout")[turnout.switch+1],
@@ -518,7 +518,7 @@ for (i.smdpr in 1:2){ # Loop over Erst- and Zweitstimme
 
 save(all.results.t1.smd,
      all.results.t1.pr,
-  file=paste0("../Outputs/Estimation_Results_21/Legacy_Replication/Exogeneity_Results_PSelect",party.selec.switch,
+  file=paste0("../Outputs/Legacy_Replication/Exogeneity_Results_PSelect",party.selec.switch,
               "_denom",vote.denom,
               c("","_spillover")[spill.over.switch+1],
               c("","_turnout")[turnout.switch+1],

@@ -13,8 +13,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 all.results <- NULL
-legacy.results.dir <- "../Outputs/Estimation_Results_21/Legacy_Replication"
-legacy.fig.dir <- "../Outputs/Estimation_Results_21/Legacy_Replication/Figures"
+legacy.results.dir <- "../Outputs/Legacy_Replication"
+legacy.fig.dir <- "../Outputs/Legacy_Replication/Figures"
 green.mask.switch <- 0 # 1: legacy split masking; 0: GRU always minor (_gruMinorOnly files)
 green.mask.suffix <- c("_gruMinorOnly", "")[green.mask.switch + 1]
 if (!dir.exists(legacy.fig.dir)) {
