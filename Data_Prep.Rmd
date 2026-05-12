@@ -876,6 +876,12 @@ for (i.year in 1:7){ # 2025, 2021, 2017, 2013, 2009, 2005, 2002
 
     all.wkr.name[,i.year] <- unlist(temp.dat[,2])
     all.land[,i.year] <- unlist(temp.dat[,3])
+    # NOTE: for year 7 (2002), temp.dat = result0202 which has no Land column.
+    # Col 3 of result0202 is Wahlberechtigte, not the state index (1–16).
+    # all.land[,7] therefore contains eligible voter counts (~150k–250k) instead
+    # of state indices. No current analysis uses all.land[,7]; if 2002 state
+    # assignments are ever needed, fix by reading the Land column from the 2002
+    # source data explicitly rather than relying on col 3 here.
 
     # Treatment (mirrors vote filling: i.now.then=1 from data_treat, 2 from data_treat_then)
     temp.treat <- if (i.now.then == 1) data_treat else data_treat_then

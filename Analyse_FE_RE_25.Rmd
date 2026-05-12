@@ -15,6 +15,13 @@ knitr::opts_chunk$set(echo = TRUE)
 save.outputs <- 1
 ```
 
+advantage:
+more cases in here:
+- 2 AfD cases are in here
+- and the BSW cases are in here.
+
+disadvantage:
+- no year adjusted voting results, thus redistricting
 
 ## Load data
 
@@ -54,7 +61,7 @@ if (party.selec.switch==12) party.selection <- c(1:6)      # Without BSW (tradit
 
 ```{r}
 all.abs.votes <- all.abs.votes[,party.selection,,,]
-all.treat <- all.treat[,party.selection,,]
+all.treat <- all.treat[,party.selection,,,]
 
 ```
 
@@ -95,6 +102,7 @@ We first compute the relative vote shares:
 
 all.treat.dummy <- all.treat
 all.treat.dummy[all.treat.dummy>0] <- 1
+all.treat.dummy <- all.treat.dummy[,,,,1]  # current-year treatment only; dim5=2 (previous-year) is for FD only
 
 table(all.treat.dummy)
 
@@ -177,12 +185,12 @@ for (i.smdpr in 1:2){ # first/second vote
 
   votes.in.array <- all.rel.votes[,,i.smdpr,1:6]
   votes <- c(all.rel.votes[,,i.smdpr,1:6] )
-  last.votes <- c(all.rel.votes[,,i.smdpr,2:7] )
+  last.votes <- c(all.rel.votes[,,i.smdpr,2:7] )  # NOTE: introduces Nickell bias O(1/T)≈14% with T=6; retained to absorb AR dynamics (residuals among treated show β=0.09, R²=0.21 correlation with fitted values without it)
   treat <- c(all.treat.dummy[,,i.smdpr,1:6] )
   year  <- as.factor(c(year.index[,,i.smdpr,1:6] ))
-  year <- relevel(year,ref="2009") # Why 2005 before?
+  year <- relevel(year,ref="2009")
   party <- factor(c(party.index[, , i.smdpr, 1:6]),
-                  levels = c("SPD", "CDU", "GRU", "FDP", "AFD", "LIN", "BSW")) # Fixed order and added BSW
+                  levels = c("SPD", "CDU", "GRU", "FDP", "AFD", "LIN", "BSW"))
   party <- relevel(party, ref = "AFD")
   district <- as.factor(c(all.wkr.index[,,i.smdpr,1:6]))
   cross.treat <- c(all.treat.dummy[,,c(2,1)[i.smdpr],1:6] )
@@ -199,7 +207,7 @@ for (i.smdpr in 1:2){ # first/second vote
   ## Model with year and party fixed effects.
   print(c("Erststimme (H1a)","Zweitstimme  (H1b)")[i.smdpr])
   options(max.print=100)
-  print(summary(lm.fe1 <- lm(votes ~ treat + last.votes+
+  print(summary(lm.fe1 <- lm(votes ~ treat + last.votes +
                                party * year + district*party )))
 
   print(c("Robust standard error"))
@@ -212,8 +220,8 @@ for (i.smdpr in 1:2){ # first/second vote
   ## Model with cross treatment (contamination)
 
   print(c("Contamination Erststimme (H2b)","Contamination Zweitstimme  (H2a)")[i.smdpr])
-  print(summary(lm.fe2 <- lm(votes~ treat + cross.treat + 
-                               last.votes + party * year + district * party))) # why not district * year
+  print(summary(lm.fe2 <- lm(votes ~ treat + cross.treat + last.votes +
+                               party * year + district * party)))
   
   print(c("Robust standard error"))
   r.se.fe2 <- sqrt(diag(vcovHC(lm.fe2, type = 'HC')))
@@ -232,7 +240,7 @@ for (i.smdpr in 1:2){ # first/second vote
   if (i.smdpr==2) all.results.pr <- all.results
 }
 
-out_dir <- file.path("Outputs", "Estimation_Results_25", "Fixed_Effects", "/")
+out_dir <- file.path("BTW_2025", "Outputs", "Fixed_Effects", "/")
 if (save.outputs == 1) {
   save(
     all.results.smd,
@@ -295,27 +303,30 @@ for (i.smdpr in 1:2) {
 ### Plotting the actual votes, predicted votes and residuals for treated district
 
 ```{r}
-par(mfrow=c(1,2)) 
+predicted <- fitted(results.te)  # fitted values from last loop iteration (PR)
+residuals <- residuals(results.te)
+
+par(mfrow=c(1,2))
 
 plot(data.te$votes[data.te$treat==1] ~ predicted[data.te$treat==1],
      xlab="Predicted",ylab="Actual")
 abline(coef=c(0,1),lty=2)
-labels <- data.te[data.te$treat==1,3:5]
+labels <- data.te[data.te$treat==1, c("year","party","district")]
 
-text( predicted[data.te$treat==1],data.te$votes[data.te$treat==1] ,
+text(predicted[data.te$treat==1], data.te$votes[data.te$treat==1],
      rownames(data.te)[data.te$treat==1],
-     pos=1,cex=0.7)
+     pos=1, cex=0.7)
 
 summary(lm.rsd <- lm(residuals[data.te$treat==1] ~ predicted[data.te$treat==1]))
 plot(residuals[data.te$treat==1] ~ predicted[data.te$treat==1],
-     xlab="Predicted",ylab="Rersiduals")
+     xlab="Predicted", ylab="Residuals")
 abline(lm.rsd)
 
-labels <- data.te[data.te$treat==1,3:5]
+labels <- data.te[data.te$treat==1, c("year","party","district")]
 
-text( predicted[data.te$treat==1],residuals[data.te$treat==1] ,
+text(predicted[data.te$treat==1], residuals[data.te$treat==1],
      rownames(data.te)[data.te$treat==1],
-     pos=1,cex=0.7)
+     pos=1, cex=0.7)
 
 
 labels
@@ -395,17 +406,17 @@ options(max.print=100)
 # District candidacy: Treatment for SMD
  
 dep.var <- c(all.rel.votes[,,1,2:5])
-lagged.dv <- c(all.rel.votes[,,1,3:6])
-treat <- c(all.rel.votes[,,1,2:5])
-treat.t1 <- c(all.rel.votes[,,1,1:4])
-cross.treat <- c(all.rel.votes[,,2,2:5])
-cross.treat.t1 <- c(all.rel.votes[,,2,1:4])
+lagged.dv <- c(all.rel.votes[,,1,3:6])  # NOTE: inconsistent with static FE if Nickell bias concern is primary; included for consistency with main model
+treat <- c(all.treat.dummy[,,1,2:5])
+treat.t1 <- c(all.treat.dummy[,,1,1:4])
+cross.treat <- c(all.treat.dummy[,,2,2:5])
+cross.treat.t1 <- c(all.treat.dummy[,,2,1:4])
 
 party.fe <- factor(c(party.index[,,1,2:5]),
-                   levels=c("CDU","SPD","AFD","FDP","LIN","GRU"))
+                   levels=c("SPD","CDU","GRU","FDP","AFD","LIN","BSW"))
 wkr.fe <- as.factor(c(all.wkr.index[,,1,2:5]))
 
-year.fe  <- as.factor(c(year.index[,,1,1:4] ))
+year.fe  <- as.factor(c(year.index[,,1,2:5]))
 
 summary(lm.out <- lm(dep.var ~ lagged.dv +
              treat + treat.t1+
@@ -425,21 +436,21 @@ all.results.smd[[5]] <- r.se
 
 
 # PR list candidacy: Treatment for PR
- 
+
 all.results <- vector("list",3)
 
 dep.var <- c(all.rel.votes[,,2,2:5])
-lagged.dv <- c(all.rel.votes[,,2,3:6])
-treat <- c(all.rel.votes[,,2,2:5])
-treat.t1 <- c(all.rel.votes[,,2,1:4])
-cross.treat <- c(all.rel.votes[,,1,2:5])
-cross.treat.t1 <- c(all.rel.votes[,,1,1:4])
+lagged.dv <- c(all.rel.votes[,,2,3:6])  # NOTE: see FPTP block above
+treat <- c(all.treat.dummy[,,2,2:5])
+treat.t1 <- c(all.treat.dummy[,,2,1:4])
+cross.treat <- c(all.treat.dummy[,,1,2:5])
+cross.treat.t1 <- c(all.treat.dummy[,,1,1:4])
 
 party.fe <- factor(c(party.index[,,2,2:5]),
-                   levels=c("CDU","SPD","AFD","FDP","LIN","GRU"))
+                   levels=c("SPD","CDU","GRU","FDP","AFD","LIN","BSW"))
 wkr.fe <- as.factor(c(all.wkr.index[,,2,2:5]))
 
-year.fe  <- as.factor(c(year.index[,,2,1:4] ))
+year.fe  <- as.factor(c(year.index[,,2,2:5]))
 
 summary(lm.out <- lm(dep.var ~ lagged.dv +
              treat + treat.t1+

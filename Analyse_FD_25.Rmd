@@ -20,14 +20,14 @@ load("Data/analysis_dat.RData")
 
 ```{r}
 # save ouputs
-save.outputs <- 1
+save.outputs <- 0
 ```
 
 ## Switch for party selection and spill over
  
 ```{r}
 party.selec.switch <- 1 # see below for options
-spill.over.switch <- 1 # 1: with spill over
+spill.over.switch <- 0 # 1: with spill over
 turnout.switch <- 0 # 1: turnout analysis
 ```
 
@@ -402,6 +402,8 @@ for (i.smdpr in 1:2){  # first/second vote
   lm.dat$year <- year
   lm.dat$party <- party
   lm.dat$wkr.name <- c(sapply(1:6, function(d) rep(all.wkr.name[, d], times = n_series)))
+  lm.dat$wkr.nr   <- rep(1:299, times = n_series * 6)
+  lm.dat$land      <- c(sapply(1:6, function(d) rep(all.land[, d], times = n_series)))
 
   lm.dat <- na.omit(lm.dat)
   
@@ -456,19 +458,43 @@ for (i.smdpr in 1:2){  # first/second vote
 ### 2a Listing up the treated districts
 
 ```{r}
-for (i.smdpr in 1:1){  # Only first vote 
-  lm.dat <- lm.dat.list[[i.smdpr]]
-  vote.type <- c("Erststimme (FPTP)", "Zweitstimmen (PR)")[i.smdpr]
-  
-  cat("\n=== Treated Districts for", vote.type, "===\n")
-  
-  treated.districts <- (lm.dat[lm.dat$treat == 1,c("treat","party","year","wkr.name")])
-  cat("Treated districts (treat = +1):\n")
-  print(treated.districts)
-  
-  treated.districts.neg <- (lm.dat[lm.dat$treat == -1,c("treat","party","year","wkr.name")])
-  cat("\nTreated districts (treat = -1):\n")
-  print(treated.districts.neg)
+state.labels <- c("Schleswig-Holstein", "Hamburg", "Niedersachsen", "Bremen",
+                  "NRW", "Hessen", "Rheinland-Pfalz", "Baden-Württemberg",
+                  "Bayern", "Saarland", "Berlin", "Brandenburg",
+                  "Mecklenburg-Vorpommern", "Sachsen", "Sachsen-Anhalt", "Thüringen")
+
+# --- FPTP: one row per treated WK ---
+cat("=== Vote FD for Treated WKs: FPTP (Erststimme) ===\n")
+fptp <- lm.dat.list[["FPTP"]]
+
+for (sign in c(1, -1)) {
+  cat("\n", if (sign == 1) "Switched ON  (treat = +1)" else "Switched OFF (treat = -1)", "\n")
+  sub <- fptp[fptp$treat == sign, c("wkr.nr", "wkr.name", "party", "year", "votes")]
+  names(sub)[5] <- "vote.fd"
+  print(sub[order(sub$party, sub$year), ], row.names = FALSE)
+}
+
+# --- PR: mean vote FD per state ---
+# PR treatment is assigned at the state (Land) level: all WKs in a state share the same
+# treatment indicator. Averaging vote.fd across WKs within a state therefore gives the
+# mean PR vote share change across that state's constituencies in the treated election pair.
+# `land` (integer 1–16, Bundeswahlleiter state ordering) was added to lm.dat during
+# construction via all.land[,d] — one state index per WK per year, values always 1–16
+# for years 2025–2005. Year 7 (2002) contains Wahlberechtigte counts instead of state
+# indices because result0202 has a different column layout than data_now and col 3 is
+# not the state index there; irrelevant here since FD only uses years 1–6.
+cat("\n\n=== Vote FD for Treated WKs: PR (Zweitstimme) — mean per state ===\n")
+pr <- lm.dat.list[["PR"]]
+
+for (sign in c(1, -1)) {
+  cat("\n", if (sign == 1) "Switched ON  (treat = +1)" else "Switched OFF (treat = -1)", "\n")
+  sub <- pr[pr$treat == sign, ]
+  # aggregate: for each state × party × year cell, average vote.fd over the WKs in that state
+  agg <- aggregate(votes ~ land + party + year, data = sub, FUN = mean)
+  agg$state <- state.labels[agg$land]
+  agg <- agg[order(agg$party, agg$year, agg$land), c("state", "party", "year", "votes")]
+  names(agg)[4] <- "mean.vote.fd"
+  print(agg, row.names = FALSE)
 }
 ```
 
