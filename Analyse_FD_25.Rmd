@@ -588,6 +588,13 @@ plot(studres(lm.out) ~ fitted(lm.out),
      ylab = "Studentized Residuals",
      main = "Residuals vs Fitted")
 abline(h = 0, lty = 2)
+
+boxplot(studres(lm.out) ~ lm.dat$treat,
+     xlab = "Treatment",
+     ylab = "Studentized Residuals",
+     main = "Residuals vs Fitted")
+abline(h = 0, lty = 2)
+
 ```
 
 ```{r }
