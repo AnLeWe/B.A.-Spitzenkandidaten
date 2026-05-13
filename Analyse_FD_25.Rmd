@@ -518,6 +518,10 @@ for (i.smdpr in 1:2){  # first/second vote
                                   #cross.treat.incumb +
                                   year + year:party 
                                   , data = lm.dat)
+    cat("\nDimensions of lm.dat:", nrow(lm.dat), "observations,", ncol(lm.dat), "variables\n")
+
+    cat("Number of valid obs in the base model:",length(lm.out$residuals),"\n")
+
 
     lm.out.spill <- lm(votes ~ treat +
                                   #treat.incumb + # control for Incumbency
@@ -526,6 +530,11 @@ for (i.smdpr in 1:2){  # first/second vote
                                   treat.spill + cross.treat.spill +
                                   year + year:party 
                                   , data = lm.dat)
+
+    cat("Number of valid obs in the spillover model:",length(lm.out$residuals),"\n")
+
+    cat("\n")
+
   } else {
     lm.out <- lm(votes ~ treat +
                                   #treat.incumb + # control for Incumbency
@@ -544,8 +553,9 @@ for (i.smdpr in 1:2){  # first/second vote
                                
   }
   
+  
   # HC option
-  print(c("Results with robust standard error"))
+  print(c("Results of the base model with robust standard error"))
   r.se <- sqrt(diag(vcovHC(lm.out, type = 'HC')))
   print(lm.out.robust <- coeftest(lm.out, vcov = vcovHC(lm.out, type = 'HC')))
 
@@ -556,7 +566,9 @@ for (i.smdpr in 1:2){  # first/second vote
   #lm.out.cluster <- coeftest(lm.out, vcov = vcov_cluster)
   #print(lm.out.cluster)
   #r.se.cluster <- sqrt(diag(vcov_cluster))
-  
+
+
+    
   all.results[[1]] <- lm.out
   all.results[[2]] <- lm.out.robust
   #all.results[[2]] <- lm.out.cluster
@@ -594,6 +606,24 @@ for (i.smdpr in 1:2){  # first/second vote
   if (i.smdpr == 1) all.results.smd.spill <- all.results
   if (i.smdpr == 2) all.results.pr.spill <- all.results
 
+    # Comparison of the effect size
+  
+  coef.base <-  coef(lm.out)
+  coef.spill <- coef(lm.out.spill)
+  
+  key <- match(names(coef.spill),names(coef.base))
+  
+  coef.all <- cbind(
+    base = coef.base[key],
+    spill = coef.spill
+  )
+  coef.all <- cbind(coef.all,coef.all[,2]/coef.all[,1])
+  rownames(coef.all) <- names(coef.spill)
+  colnames(coef.all)[3] <- "Ratio (spill/base)"
+  cat("===========================================\n")
+  cat("Comparison of the base and spillover model \n")
+  cat("===========================================\n")
+  print(coef.all)
 
 
 
