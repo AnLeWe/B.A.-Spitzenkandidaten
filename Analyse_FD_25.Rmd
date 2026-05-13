@@ -27,7 +27,6 @@ save.outputs <- 0
  
 ```{r}
 party.selec.switch <- 1 # see below for options
-spill.over.switch <- 0 # 1: with spill over
 turnout.switch <- 0 # 1: turnout analysis
 ```
 
@@ -54,10 +53,8 @@ if (party.selec.switch==12) party.selection <- c(1:6)      # Without BSW (tradit
 Reading adjacent matrix
 
 ```{r}
-if (spill.over.switch>0){
   load("Data/btw_all_shape.RData")
   all.nb.mat <- all.nb.mat[3:8]
-}
 
 ```
 
@@ -209,21 +206,22 @@ The resulting all.treat.dummy.fd has:
 Incorporating spill-over treatment
 
 ```{r}
-if (spill.over.switch > 0){
+all.treat.dummy.fd.spill <- all.treat.dummy.fd
   for (i.tier in 1:2){
     for (i.btw in 1:6){
       temp.treat <- all.treat.dummy.fd[, , i.tier, i.btw]
       temp.mat <- as.matrix(all.nb.mat[[7 - i.btw]]) # 7-1=6: 2025
-      diag(temp.mat) <- 1  # replace the diagonal elements with 1
       spill.treat <- temp.mat %*% temp.treat
       spill.treat[spill.treat > 0] <- 1
       spill.treat[spill.treat < 0] <- -1
-      all.treat.dummy.fd[, , i.tier, i.btw] <- spill.treat
+      all.treat.dummy.fd.spill[, , i.tier, i.btw] <- spill.treat
     }
   }
-}
 
-apply(all.treat.dummy.fd, 3, table)
+all.treat.dummy.fd.spill[all.treat.dummy.fd==1] <- 0
+all.treat.dummy.fd.spill[all.treat.dummy.fd==-1] <- 0
+
+apply(all.treat.dummy.fd.spill, 3, table)
 ```
 
 
@@ -298,7 +296,6 @@ generate_filename <- function(vote_type) {
   paste0(
     "party.selec", party.selec.switch,
     "_denom", vote.denom,
-    if (spill.over.switch) "_spillover" else "",
     if (turnout.switch) "_turnout" else "",
     "_FD_Boxplots_", vote_type, "-",
     format(Sys.Date(), "%Y-%m-%d"),
@@ -380,6 +377,7 @@ for (i.smdpr in 1:2){  # first/second vote
   votes.in.array <- all.rel.votes.fd[, , i.smdpr, ]
   votes <- c(all.rel.votes.fd[, , i.smdpr, ])
   treat <- c(all.treat.dummy.fd[, , i.smdpr, ])
+  treat.spill <- c(all.treat.dummy.fd.spill[, , i.smdpr, ])
   treat.incumb <- c(all.treat.incumb.fd[, , i.smdpr, ])
   year  <- as.factor(c(year.index[, , i.smdpr, ]))
   year <- relevel(year, ref = "2009")  # Change to middle year?
@@ -390,6 +388,7 @@ for (i.smdpr in 1:2){  # first/second vote
   party <- relevel(party, ref = "AFD")
   
   cross.treat <- c(all.treat.dummy.fd[, , c(2,1)[i.smdpr], ])
+  cross.treat.spill <- c(all.treat.dummy.fd.spill[, , c(2,1)[i.smdpr], ])
   cross.treat.incumb <- c(all.treat.incumb.fd[, , c(2,1)[i.smdpr], ])
   
   # Each of the 299 constituencies appears multiple times (once per party per time period)
@@ -397,7 +396,8 @@ for (i.smdpr in 1:2){  # first/second vote
   n_series <- dim(all.treat.dummy.fd)[2]
   constituency <- rep(1:299, times = n_series * 6)
 
-  lm.dat <- cbind(votes, treat, cross.treat, treat.incumb, cross.treat.incumb)
+  lm.dat <- cbind(votes, treat, cross.treat, treat.incumb, cross.treat.incumb,
+                   treat.spill, cross.treat.spill)
   lm.dat <- as.data.frame(lm.dat)
   lm.dat$year <- year
   lm.dat$party <- party
@@ -507,31 +507,48 @@ for (i.smdpr in 1:2){  # first/second vote
   vote.type <- c("Erststimme (FPTP)", "Zweitstimmen (PR)")[i.smdpr]
   
   cat("\n\n=== Estimation for", vote.type, "===\n")
-  all.results <- vector("list", 5)  # list for results
+  all.results <- all.results.spill <- vector("list", 5)  # list for results
   votes.in.array <- all.rel.votes.fd[, , i.smdpr, ]
   
   print(c("DV: Erststimme", "DV: Zweitstimme")[i.smdpr])
   if (turnout.switch == 0){
-    print(summary(lm.out <- lm(votes ~ treat +
+    lm.out <- lm(votes ~ treat +
                                   #treat.incumb + # control for Incumbency
                                   cross.treat +
                                   #cross.treat.incumb +
                                   year + year:party 
-                                  , data = lm.dat))) 
+                                  , data = lm.dat)
+
+    lm.out.spill <- lm(votes ~ treat +
+                                  #treat.incumb + # control for Incumbency
+                                  cross.treat +
+                                  #cross.treat.incumb +
+                                  treat.spill + cross.treat.spill +
+                                  year + year:party 
+                                  , data = lm.dat)
   } else {
-    print(summary(lm.out <- lm(votes ~ treat +
+    lm.out <- lm(votes ~ treat +
                                   #treat.incumb + # control for Incumbency
                                   cross.treat +
                                   #cross.treat.incumb +
                                   year 
-                                  , data = lm.dat))) 
+                                  , data = lm.dat)
+
+    lm.out.spill <- lm(votes ~ treat +
+                                  #treat.incumb + # control for Incumbency
+                                  cross.treat +
+                                  #cross.treat.incumb +
+                                  treat.spill + cross.treat.spill +
+                                  year 
+                                  , data = lm.dat)
+                               
   }
   
   # HC option
-  print(c("Robust standard error"))
+  print(c("Results with robust standard error"))
   r.se <- sqrt(diag(vcovHC(lm.out, type = 'HC')))
   print(lm.out.robust <- coeftest(lm.out, vcov = vcovHC(lm.out, type = 'HC')))
-  
+
   # OPTION: Cluster-robust standard errors
   #print("\n Cluster-Robust SEs (by Constituency)\n")
   #print("Accounts for serial correlation and heteroskedasticity within constituencies\n")
@@ -550,6 +567,36 @@ for (i.smdpr in 1:2){  # first/second vote
   
   if (i.smdpr == 1) all.results.smd <- all.results
   if (i.smdpr == 2) all.results.pr <- all.results
+
+
+
+  # HC option
+  print(c("Results with Spill-over"))
+  r.se <- sqrt(diag(vcovHC(lm.out.spill, type = 'HC')))
+  print(lm.out.robust <- coeftest(lm.out.spill, vcov = vcovHC(lm.out.spill, type = 'HC')))
+
+  # OPTION: Cluster-robust standard errors
+  #print("\n Cluster-Robust SEs (by Constituency)\n")
+  #print("Accounts for serial correlation and heteroskedasticity within constituencies\n")
+  #vcov_cluster <- vcovCL(lm.out, cluster = lm.dat$constituency, type = "HC1")
+  #lm.out.cluster <- coeftest(lm.out, vcov = vcov_cluster)
+  #print(lm.out.cluster)
+  #r.se.cluster <- sqrt(diag(vcov_cluster))
+  
+  all.results[[1]] <- lm.out.spill
+  all.results[[2]] <- lm.out.robust
+  #all.results[[2]] <- lm.out.cluster
+  all.results[[3]] <- lm.dat
+  all.results[[4]] <- votes.in.array
+  all.results[[5]] <- r.se
+  #all.results[[5]] <- r.se.cluster
+  
+  if (i.smdpr == 1) all.results.smd.spill <- all.results
+  if (i.smdpr == 2) all.results.pr.spill <- all.results
+
+
+
+
 }
 ```
 
@@ -560,12 +607,13 @@ if (save.outputs == 1) {
   save(
     all.results.smd,
     all.results.pr,
+    all.results.smd.spill,
+    all.results.pr.spill,
     file = paste0(
       out_dir,
       "party.selec",
       party.selec.switch,
       "_denom", vote.denom,
-      c("", "_spillover")[spill.over.switch + 1],
       c("", "_turnout")[turnout.switch + 1],
       "_", format(Sys.Date(), "%Y-%m-%d"),
       ".RData"
@@ -576,6 +624,12 @@ if (save.outputs == 1) {
 
 
 ```{r}
+
+lm.out <- all.results.smd[[1]]
+lm.out <- all.results.pr[[1]]
+lm.out <- all.results.smd.spill[[1]]
+lm.out <- all.results.pr.spill[[1]]
+
 # Residuals vs Fitted
 plot(lm.out, which = 1)
 
@@ -634,7 +688,7 @@ abline(h = 0, lty = 2)
 
 
 ```{r}
-if (turnout.switch==1|spill.over.switch==1) knitr::knit_exit()
+if (turnout.switch==1) knitr::knit_exit()
 ```
 
 ### Diagnostics I: Serial correlated errors
@@ -824,7 +878,6 @@ if (save.outputs == 1) {
      file = paste0(out_dir, "party.selec",
                    party.selec.switch,
                    "_denom", vote.denom,
-                   c("", "_spillover")[spill.over.switch + 1],
                    c("", "_turnout")[turnout.switch + 1],
                    "_exgnt_",
                    format(Sys.Date(), "%Y-%m-%d"),
