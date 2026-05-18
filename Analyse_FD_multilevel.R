@@ -84,83 +84,12 @@ stan_data_full <- list(
 )
 
 
-# -----------------------------------------------------------------------------
-# Helpers
-# -----------------------------------------------------------------------------
-
 full_stan_file <- "Analyse_FD_multilevel_full_interactions.stan"
 full_summary_vars <- c(
 	"alpha", "beta_treat", "beta_cross_treat",
 	"sigma_party", "sigma_year", "sigma_land",
 	"sigma_yp", "sigma_yl", "sigma_pl", "sigma_ypl", "sigma"
 )
-
-run_diagnostics <- function(fit_obj, max_treedepth = 12) {
-	diag <- fit_obj$diagnostic_summary()
-	print(diag)
-
-	all_summary <- fit_obj$summary()
-	rhats <- all_summary$rhat
-	ess_bulk <- all_summary$ess_bulk
-	ess_tail <- all_summary$ess_tail
-
-	cat("\nDiagnostics checks:\n")
-	cat("Max Rhat:", max(rhats, na.rm = TRUE), "\n")
-	cat("Min bulk ESS:", min(ess_bulk, na.rm = TRUE), "\n")
-	cat("Min tail ESS:", min(ess_tail, na.rm = TRUE), "\n")
-
-	sampler_diag <- fit_obj$sampler_diagnostics(format = "df")
-	total_divergences <- sum(sampler_diag$divergent__, na.rm = TRUE)
-	max_treedepth_hits <- sum(sampler_diag$treedepth__ >= max_treedepth, na.rm = TRUE)
-
-	cat("Total divergences:", total_divergences, "\n")
-	cat("Transitions at max treedepth:", max_treedepth_hits, "\n")
-
-	ebfmi_by_chain <- with(
-		sampler_diag,
-		tapply(energy__, chain_id__, function(x) {
-			n <- length(x)
-			if (n < 2) {
-				return(NA_real_)
-			}
-			sum(diff(x)^2) / ((n - 1) * stats::var(x))
-		})
-	)
-
-	cat("E-BFMI by chain:\n")
-	print(ebfmi_by_chain)
-
-	if (any(ebfmi_by_chain < 0.3, na.rm = TRUE)) {
-		cat("Warning: At least one chain has E-BFMI < 0.3.\n")
-	}
-}
-
-fit_full_model <- function() {
-	if (!file.exists(full_stan_file)) {
-		stop("Stan file not found: ", full_stan_file)
-	}
-
-	mod <- cmdstanr::cmdstan_model(full_stan_file)
-
-	fit <- mod$sample(
-		data = stan_data_full,
-		chains = 4,
-		iter_sampling = 1000,
-		iter_warmup = 1000,
-		seed = 123,
-		adapt_delta = 0.95,
-		max_treedepth = 12,
-		parallel_chains = min(4, parallel::detectCores())
-	)
-
-	cat("\nPosterior summary for full_interactions\n")
-	print(fit$summary(variables = full_summary_vars))
-
-	cat("\nDiagnostics for full_interactions\n")
-	run_diagnostics(fit, max_treedepth = 12)
-
-	fit
-}
 
 
 # -----------------------------------------------------------------------------
@@ -169,6 +98,64 @@ fit_full_model <- function() {
 
 options(mc.cores = parallel::detectCores())
 
-fit <- fit_full_model()
+if (!file.exists(full_stan_file)) {
+	stop("Stan file not found: ", full_stan_file)
+}
+
+mod <- cmdstanr::cmdstan_model(full_stan_file)
+
+fit <- mod$sample(
+	data = stan_data_full,
+	chains = 4,
+	iter_sampling = 1000,
+	iter_warmup = 1000,
+	seed = 123,
+	adapt_delta = 0.95,
+	max_treedepth = 12,
+	parallel_chains = min(4, parallel::detectCores())
+)
+
+cat("\nPosterior summary for full_interactions\n")
+print(fit$summary(variables = full_summary_vars))
+
+cat("\nDiagnostics for full_interactions\n")
+
+diag <- fit$diagnostic_summary()
+print(diag)
+
+all_summary <- fit$summary()
+rhats <- all_summary$rhat
+ess_bulk <- all_summary$ess_bulk
+ess_tail <- all_summary$ess_tail
+
+cat("\nDiagnostics checks:\n")
+cat("Max Rhat:", max(rhats, na.rm = TRUE), "\n")
+cat("Min bulk ESS:", min(ess_bulk, na.rm = TRUE), "\n")
+cat("Min tail ESS:", min(ess_tail, na.rm = TRUE), "\n")
+
+sampler_diag <- fit$sampler_diagnostics(format = "df")
+total_divergences <- sum(sampler_diag$divergent__, na.rm = TRUE)
+max_treedepth_hits <- sum(sampler_diag$treedepth__ >= 12, na.rm = TRUE)
+
+cat("Total divergences:", total_divergences, "\n")
+cat("Transitions at max treedepth:", max_treedepth_hits, "\n")
+
+ebfmi_by_chain <- with(
+	sampler_diag,
+	tapply(energy__, chain_id__, function(x) {
+		n <- length(x)
+		if (n < 2) {
+			return(NA_real_)
+		}
+		sum(diff(x)^2) / ((n - 1) * stats::var(x))
+	})
+)
+
+cat("E-BFMI by chain:\n")
+print(ebfmi_by_chain)
+
+if (any(ebfmi_by_chain < 0.3, na.rm = TRUE)) {
+	cat("Warning: At least one chain has E-BFMI < 0.3.\n")
+}
 
 
