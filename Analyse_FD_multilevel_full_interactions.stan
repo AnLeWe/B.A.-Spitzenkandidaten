@@ -107,13 +107,6 @@ generated quantities {
       + u_yl[yl_id]
       + u_pl[pl_id]
       + u_ypl[ypl_id];
-  vector[J_party] u_party_out = u_party;
-  vector[J_year] u_year_out = u_year;
-  vector[J_land] u_land_out = u_land;
-  vector[J_yp] u_yp_out = u_yp;
-  vector[J_yl] u_yl_out = u_yl;
-  vector[J_pl] u_pl_out = u_pl;
-  vector[J_ypl] u_ypl_out = u_ypl;
 
   for (n in 1:N) {
 
