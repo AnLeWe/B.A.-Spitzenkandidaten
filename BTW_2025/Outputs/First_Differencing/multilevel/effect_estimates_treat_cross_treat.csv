@@ -1,0 +1,9 @@
+"tier","model","variable","mean","q2_5","q97_5"
+"Tier 1","With 3-way interaction","beta_treat",0.013102053651575,0.0088075498875,0.017254832475
+"Tier 1","With 3-way interaction","beta_cross_treat",0.0061713349811026,0.0016613350525,0.01039426615
+"Tier 1","Without 3-way interaction","beta_treat",0.012872574771775,0.00746499579,0.018329409975
+"Tier 1","Without 3-way interaction","beta_cross_treat",0.0063181632305,0.0051036849475,0.0074888092825
+"Tier 2","With 3-way interaction","beta_treat",0.00891758847155,0.0041039373225,0.013473706975
+"Tier 2","With 3-way interaction","beta_cross_treat",0.00267428780446929,-0.00037264062975,0.005757027685
+"Tier 2","Without 3-way interaction","beta_treat",0.010528200709875,0.00947438145,0.011646887225
+"Tier 2","Without 3-way interaction","beta_cross_treat",0.00176897622596269,-0.0031362334825,0.0067122686075
