@@ -4,29 +4,50 @@
 #   - Within each panel: model with vs. without three-way interaction
 #
 
+if (!requireNamespace("posterior", quietly = TRUE)) {
+  stop("Package 'posterior' is required. Please install it first.")
+}
+
 base_dir <- "BTW_2025/Outputs/First_Differencing/multilevel"
 
 files <- data.frame(
   tier = c("tier1", "tier1", "tier2", "tier2"),
   model_key = c("full_interactions", "without_state", "full_interactions", "without_state"),
   file = c(
-    "summary_full_interactions_tier1.csv",
-    "summary_without_state_tier1.csv",
-    "summary_full_interactions_tier2.csv",
-    "summary_without_state_tier2.csv"
+    "posterior_full_interactions_tier1.rds",
+    "posterior_without_state_tier1.rds",
+    "posterior_full_interactions_tier2.rds",
+    "posterior_without_state_tier2.rds"
   ),
   stringsAsFactors = FALSE
 )
 
 extract_effects <- function(path, tier, model_key) {
   if (!file.exists(path)) {
-    stop("Summary file not found: ", path)
+    stop("Posterior draw file not found: ", path)
   }
 
-  x <- read.csv(path, stringsAsFactors = FALSE)
+  x <- readRDS(path)
+  draw_mat <- posterior::as_draws_matrix(
+    posterior::subset_draws(x, variable = c("beta_treat", "beta_cross_treat"))
+  )
 
-  keep <- x$variable %in% c("beta_treat", "beta_cross_treat")
-  x <- x[keep, c("variable", "mean", "q5", "q95")]
+  x <- data.frame(
+    variable = c("beta_treat", "beta_cross_treat"),
+    mean = c(
+      mean(draw_mat[, "beta_treat"]),
+      mean(draw_mat[, "beta_cross_treat"])
+    ),
+    q2_5 = c(
+      unname(quantile(draw_mat[, "beta_treat"], probs = 0.025)),
+      unname(quantile(draw_mat[, "beta_cross_treat"], probs = 0.025))
+    ),
+    q97_5 = c(
+      unname(quantile(draw_mat[, "beta_treat"], probs = 0.975)),
+      unname(quantile(draw_mat[, "beta_cross_treat"], probs = 0.975))
+    ),
+    stringsAsFactors = FALSE
+  )
 
   if (nrow(x) != 2) {
     stop("Expected beta_treat and beta_cross_treat in: ", path)
@@ -73,7 +94,7 @@ effects_df$model <- factor(
 
 # Save a compact table used by the figure for reproducibility
 write.csv(
-  effects_df[, c("tier", "model", "variable", "mean", "q5", "q95")],
+  effects_df[, c("tier", "model", "variable", "mean", "q2_5", "q97_5")],
   file = file.path(base_dir, "effect_estimates_treat_cross_treat.csv"),
   row.names = FALSE
 )
@@ -85,7 +106,7 @@ effect_levels <- levels(effects_df$effect)
 model_levels <- levels(effects_df$model)
 model_colors <- c("With 3-way interaction" = "#1b9e77", "Without 3-way interaction" = "#d95f02")
 
-overall_ylim <- range(c(effects_df$q5, effects_df$q95), finite = TRUE)
+overall_ylim <- range(c(effects_df$q2_5, effects_df$q97_5), finite = TRUE)
 pad <- 0.08 * diff(overall_ylim)
 if (!is.finite(pad) || pad == 0) {
   pad <- 0.01
@@ -127,7 +148,7 @@ for (tier_now in tier_levels) {
 
     x_now <- x_base + x_offsets[m]
 
-    segments(x_now, dd$q5, x_now, dd$q95, col = model_colors[[model_now]], lwd = 2)
+    segments(x_now, dd$q2_5, x_now, dd$q97_5, col = model_colors[[model_now]], lwd = 2)
     points(x_now, dd$mean, pch = 16, cex = 1.05, col = model_colors[[model_now]])
   }
 
@@ -143,7 +164,7 @@ for (tier_now in tier_levels) {
 }
 
 mtext("Estimated Effects of Treat and Cross-treat", outer = TRUE, cex = 1.1, font = 2, line = 0.8)
-mtext("Posterior mean with 90% credible interval (q5 to q95)", outer = TRUE, cex = 0.9, line = -0.15)
+mtext("Posterior mean with 95% credible interval (2.5% to 97.5%)", outer = TRUE, cex = 0.9, line = -0.15)
 
 dev.off()
 
