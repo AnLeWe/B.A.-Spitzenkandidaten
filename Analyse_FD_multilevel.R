@@ -61,6 +61,9 @@ without_state_summary_vars <- c(
 mod_full <- cmdstanr::cmdstan_model(full_stan_file)
 mod_without_state <- cmdstanr::cmdstan_model(without_state_stan_file)
 
+q2.5 <- function(x) posterior::quantile2(x, probs = 0.025)
+q97.5 <- function(x) posterior::quantile2(x, probs = 0.975)
+
 
 for (i.tier in 1:2){
 
@@ -169,10 +172,14 @@ for (i.tier in 1:2){
 	)
 
 	cat("\nPosterior summary for full_interactions (", tier_label, ")\n", sep = "")
-	print(fit_full$summary(variables = full_summary_vars))
+	full_summary <- posterior::summarise_draws(
+		fit_full$draws(variables = full_summary_vars),
+		"mean", "median", "sd", "mad", q2.5, q97.5, "rhat", "ess_bulk", "ess_tail"
+	)
+	print(full_summary)
 
 	saveRDS(fit_full$draws(), file = file.path(output_dir, paste0("posterior_full_interactions_", tier_label, ".rds")))
-	write.csv(fit_full$summary(), file = file.path(output_dir, paste0("summary_full_interactions_", tier_label, ".csv")), row.names = FALSE)
+	write.csv(full_summary, file = file.path(output_dir, paste0("summary_full_interactions_", tier_label, ".csv")), row.names = FALSE)
 	write.csv(fit_full$diagnostic_summary(), file = file.path(output_dir, paste0("diagnostics_full_interactions_", tier_label, ".csv")), row.names = FALSE)
 	full_csv_files <- fit_full$output_files()
 	for (chain_idx in seq_along(full_csv_files)) {
@@ -197,10 +204,14 @@ for (i.tier in 1:2){
 	)
 
 	cat("\nPosterior summary for without_state (", tier_label, ")\n", sep = "")
-	print(fit_without_state$summary(variables = without_state_summary_vars))
+	without_state_summary <- posterior::summarise_draws(
+		fit_without_state$draws(variables = without_state_summary_vars),
+		"mean", "median", "sd", "mad", q2.5, q97.5, "rhat", "ess_bulk", "ess_tail"
+	)
+	print(without_state_summary)
 
 	saveRDS(fit_without_state$draws(), file = file.path(output_dir, paste0("posterior_without_state_", tier_label, ".rds")))
-	write.csv(fit_without_state$summary(), file = file.path(output_dir, paste0("summary_without_state_", tier_label, ".csv")), row.names = FALSE)
+	write.csv(without_state_summary, file = file.path(output_dir, paste0("summary_without_state_", tier_label, ".csv")), row.names = FALSE)
 	write.csv(fit_without_state$diagnostic_summary(), file = file.path(output_dir, paste0("diagnostics_without_state_", tier_label, ".csv")), row.names = FALSE)
 	without_state_csv_files <- fit_without_state$output_files()
 	for (chain_idx in seq_along(without_state_csv_files)) {
