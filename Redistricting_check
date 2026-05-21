@@ -1,0 +1,320 @@
+# This script checks for redistricting by comparing:
+# - official previous-election results (data_now at year t-1)
+# - recomputed previous-election results (data_then at year t)
+#
+# If district boundaries stay unchanged, the distribution of
+# "Wahlberechtigte Erststimmen" should be very similar between both.
+# Systematic mismatches indicate boundary changes and/or aggregation changes.
+
+load("Data/analysis_dat.RData")
+
+eligible_col <- "Wahlberechtigte Erststimmen"
+id_cols <- c("Nr ", "Gebiet ", "Land")
+berlin_compare_cols <- c(
+	"Wahlberechtigte Erststimmen",
+	"Wahlberechtigte Zweitstimmen",
+	"Waehlende Erststimmen",
+	"Waehlende Zweitstimmen",
+	"Ungueltige Erststimmen",
+	"Ungueltige Zweitstimmen",
+	"Gueltige Erststimmen",
+	"Gueltige Zweitstimmen",
+	"SPD Erststimmen",
+	"SPD Zweitstimmen",
+	"CDU/CSU Erststimmen",
+	"CDU/CSU Zweitstimmen"
+)
+
+if (!all(c("data_now", "data_then") %in% ls())) {
+	stop("Objects 'data_now' and 'data_then' were not found in Data/analysis_dat.RData")
+}
+
+required_cols <- c(id_cols, "Jahr", eligible_col, berlin_compare_cols)
+if (!all(required_cols %in% names(data_now)) || !all(required_cols %in% names(data_then))) {
+	stop("Required columns are missing in data_now or data_then")
+}
+
+pair_by_multiset <- function(then_df, now_prev_df, value_col) {
+	then_vals <- then_df[[value_col]]
+	prev_vals <- now_prev_df[[value_col]]
+
+	then_occ <- ave(seq_along(then_vals), then_vals, FUN = seq_along)
+	prev_occ <- ave(seq_along(prev_vals), prev_vals, FUN = seq_along)
+
+	then_key <- paste(then_vals, then_occ, sep = "_")
+	prev_key <- paste(prev_vals, prev_occ, sep = "_")
+
+	match_idx <- match(then_key, prev_key)
+
+	unmatched_then <- then_df[is.na(match_idx), c(id_cols, value_col)]
+	unmatched_prev <- now_prev_df[!(seq_len(nrow(now_prev_df)) %in% match_idx[!is.na(match_idx)]),
+																c(id_cols, value_col)]
+
+	list(
+		match_idx = match_idx,
+		unmatched_then = unmatched_then,
+		unmatched_prev = unmatched_prev
+	)
+}
+
+normalize_name <- function(x) {
+	x <- trimws(as.character(x))
+	x <- tolower(x)
+	x <- gsub("[[:space:]]+", " ", x)
+	x
+}
+
+years <- sort(unique(data_now[["Jahr"]]), decreasing = TRUE)
+if (length(years) < 2) {
+	stop("Need at least two election years to run the redistricting check")
+}
+
+summary_out <- data.frame(
+	current_year = integer(0),
+	previous_year = integer(0),
+	n_districts = integer(0),
+	n_matched_by_name = integer(0),
+	n_new_name = integer(0),
+	n_eligible_changed = integer(0),
+	n_renumbered = integer(0),
+	n_redistricted = integer(0),
+	n_flagged_total = integer(0),
+	share_flagged_total = numeric(0)
+)
+
+detail_out <- list()
+redistricted_districts <- data.frame(
+	district_number = integer(0),
+	district_name = character(0),
+	year = integer(0),
+	federal_state = integer(0),
+	flag_new_name = logical(0),
+	flag_eligible_changed = logical(0),
+	flag_renumbered = logical(0),
+	district_type = character(0),
+	stringsAsFactors = FALSE
+)
+
+for (i in seq_len(length(years) - 1)) {
+	y_curr <- years[i]
+	y_prev <- years[i + 1]
+
+	then_curr <- data_then[data_then[["Jahr"]] == y_curr, c(id_cols, "Jahr", eligible_col)]
+	now_prev <- data_now[data_now[["Jahr"]] == y_prev, c(id_cols, "Jahr", eligible_col)]
+
+	if (nrow(then_curr) != nrow(now_prev)) {
+		warning(sprintf(
+			"Different district count for %s (recomputed previous) vs %s (official previous): %s vs %s",
+			y_curr, y_prev, nrow(then_curr), nrow(now_prev)
+		))
+	}
+
+	then_curr$name_key <- normalize_name(then_curr[["Gebiet "]])
+	now_prev$name_key <- normalize_name(now_prev[["Gebiet "]])
+
+	if (anyDuplicated(then_curr$name_key) > 0) {
+		warning(sprintf("Duplicate district names in data_then for year %s; using first match", y_curr))
+	}
+	if (anyDuplicated(now_prev$name_key) > 0) {
+		warning(sprintf("Duplicate district names in data_now for year %s; using first match", y_prev))
+	}
+
+	match_idx <- match(then_curr$name_key, now_prev$name_key)
+	matched_by_name <- !is.na(match_idx)
+	new_name <- is.na(match_idx)
+
+	eligible_then <- then_curr[[eligible_col]]
+	eligible_prev <- rep(NA_real_, nrow(then_curr))
+	eligible_prev[matched_by_name] <- now_prev[[eligible_col]][match_idx[matched_by_name]]
+	eligible_diff <- eligible_then - eligible_prev
+	eligible_changed <- matched_by_name & !is.na(eligible_diff) & (eligible_diff != 0)
+
+	nr_then <- as.character(then_curr[["Nr "]])
+	nr_prev <- rep(NA_character_, nrow(then_curr))
+	nr_prev[matched_by_name] <- as.character(now_prev[["Nr "]][match_idx[matched_by_name]])
+	renumbered <- matched_by_name & !is.na(nr_prev) & (nr_then != nr_prev)
+
+	redistricted <- new_name | eligible_changed
+	flagged_total <- redistricted | renumbered
+
+	n_matched_by_name <- sum(matched_by_name)
+	n_new_name <- sum(new_name)
+	n_eligible_changed <- sum(eligible_changed)
+	n_renumbered <- sum(renumbered)
+	n_redistricted <- sum(redistricted)
+	n_flagged_total <- sum(flagged_total)
+
+	summary_out <- rbind(
+		summary_out,
+		data.frame(
+			current_year = y_curr,
+			previous_year = y_prev,
+			n_districts = nrow(then_curr),
+			n_matched_by_name = n_matched_by_name,
+			n_new_name = n_new_name,
+			n_eligible_changed = n_eligible_changed,
+			n_renumbered = n_renumbered,
+			n_redistricted = n_redistricted,
+			n_flagged_total = n_flagged_total,
+			share_flagged_total = n_flagged_total / nrow(then_curr)
+		)
+	)
+
+	pair_name <- paste0(y_curr, "_vs_", y_prev)
+	detail_out[[pair_name]] <- list(
+		new_name = then_curr[new_name, c(id_cols, "Jahr", eligible_col)],
+		eligible_changed = data.frame(
+			then_curr[eligible_changed, c(id_cols, "Jahr")],
+			eligible_then = eligible_then[eligible_changed],
+			eligible_prev = eligible_prev[eligible_changed],
+			eligible_diff = eligible_diff[eligible_changed],
+			stringsAsFactors = FALSE
+		),
+		renumbered = data.frame(
+			then_curr[renumbered, c(id_cols, "Jahr")],
+			previous_number = nr_prev[renumbered],
+			stringsAsFactors = FALSE
+		)
+	)
+
+	if (n_flagged_total > 0) {
+		types <- rep("", sum(flagged_total))
+		types[new_name[flagged_total]] <- "new_name"
+		types[eligible_changed[flagged_total]] <- ifelse(
+			nchar(types[eligible_changed[flagged_total]]) > 0,
+			paste0(types[eligible_changed[flagged_total]], "|eligible_changed"),
+			"eligible_changed"
+		)
+		types[renumbered[flagged_total]] <- ifelse(
+			nchar(types[renumbered[flagged_total]]) > 0,
+			paste0(types[renumbered[flagged_total]], "|renumbered"),
+			"renumbered"
+		)
+
+		rows_then <- data.frame(
+			district_number = then_curr[["Nr "]][flagged_total],
+			district_name = then_curr[["Gebiet "]][flagged_total],
+			year = y_curr,
+			federal_state = then_curr[["Land"]][flagged_total],
+			flag_new_name = new_name[flagged_total],
+			flag_eligible_changed = eligible_changed[flagged_total],
+			flag_renumbered = renumbered[flagged_total],
+			district_type = types,
+			stringsAsFactors = FALSE
+		)
+		redistricted_districts <- rbind(redistricted_districts, rows_then)
+	}
+}
+
+summary_out$share_flagged_total <- round(summary_out$share_flagged_total, 4)
+
+cat("\nRedistricting check summary (eligible voters: Erststimme)\n")
+print(summary_out, row.names = FALSE)
+
+cat("\nDetailed redistricting diagnosis per pair:\n")
+for (nm in names(detail_out)) {
+	cat("\n", nm, "\n", sep = "")
+	cat("New district names (present in current, not in previous):\n")
+	print(detail_out[[nm]]$new_name, row.names = FALSE)
+	cat("Matched names with changed eligible voters:\n")
+	print(detail_out[[nm]]$eligible_changed, row.names = FALSE)
+	cat("Matched names with changed district number (renumbered):\n")
+	print(detail_out[[nm]]$renumbered, row.names = FALSE)
+}
+
+redistricted_districts <- unique(redistricted_districts)
+redistricted_districts <- redistricted_districts[
+	order(redistricted_districts$year, redistricted_districts$district_number),
+]
+
+out_csv <- "Data/redistricted_districts.csv"
+write.csv(redistricted_districts, out_csv, row.names = FALSE, fileEncoding = "UTF-8")
+cat("\nCSV written:", out_csv, "\n")
+cat("Rows in CSV:", nrow(redistricted_districts), "\n")
+
+# Consistency check against official 2025 redistricting description
+# (Bundeswahlleiterin, Wahlkreiseinteilung 2025):
+# 16 redistricted constituencies due population/municipal boundary changes.
+official_redistricted_2025 <- c(62, 65, 66, 67, 70, 71, 72, 73,
+	188, 189, 251, 252, 253, 254, 255, 257)
+
+derived_redistricted_2025 <- unique(redistricted_districts$district_number[
+	redistricted_districts$year == 2025 &
+		(redistricted_districts$flag_new_name | redistricted_districts$flag_eligible_changed)
+])
+derived_redistricted_2025 <- sort(as.integer(derived_redistricted_2025))
+
+false_positive_2025 <- setdiff(derived_redistricted_2025, official_redistricted_2025)
+missed_official_2025 <- setdiff(official_redistricted_2025, derived_redistricted_2025)
+
+if (length(false_positive_2025) > 0 || length(missed_official_2025) > 0) {
+	cat("\n2025 consistency check vs official redistricted list:\n")
+	cat("Derived count:", length(derived_redistricted_2025),
+		"| Official count:", length(official_redistricted_2025), "\n")
+	cat("False positives:", paste(false_positive_2025, collapse = ", "), "\n")
+	cat("Missed official:", paste(missed_official_2025, collapse = ", "), "\n")
+} else {
+	cat("\n2025 consistency check: derived redistricted list matches official list.\n")
+}
+
+map_2025 <- data.frame(
+	district_number = data_now[data_now[["Jahr"]] == 2025, "Nr "],
+	district_name = data_now[data_now[["Jahr"]] == 2025, "Gebiet "],
+	federal_state = data_now[data_now[["Jahr"]] == 2025, "Land"],
+	stringsAsFactors = FALSE
+)
+
+check_df <- data.frame(
+	district_number = sort(unique(c(false_positive_2025, missed_official_2025))),
+	stringsAsFactors = FALSE
+)
+if (nrow(check_df) > 0) {
+	check_df$flag_false_positive <- check_df$district_number %in% false_positive_2025
+	check_df$flag_missed_official <- check_df$district_number %in% missed_official_2025
+	check_df <- merge(check_df, map_2025, by = "district_number", all.x = TRUE, sort = TRUE)
+	check_out <- "Data/redistricting_2025_vs_official_check.csv"
+	write.csv(check_df, check_out, row.names = FALSE, fileEncoding = "UTF-8")
+	cat("Consistency CSV written:", check_out, "\n")
+}
+
+# Berlin-only diagnostics: metric-by-metric differences (2025 aligned t-1 vs official 2021)
+berlin_then_2025 <- data_then[data_then[["Jahr"]] == 2025 & data_then[["Land"]] == 11,
+	c("Nr ", "Gebiet ", berlin_compare_cols)]
+berlin_now_2021 <- data_now[data_now[["Jahr"]] == 2021 & data_now[["Land"]] == 11,
+	c("Nr ", "Gebiet ", berlin_compare_cols)]
+
+berlin_then_2025$name_key <- normalize_name(berlin_then_2025[["Gebiet "]])
+berlin_now_2021$name_key <- normalize_name(berlin_now_2021[["Gebiet "]])
+berlin_match_idx <- match(berlin_then_2025$name_key, berlin_now_2021$name_key)
+berlin_matched <- !is.na(berlin_match_idx)
+
+berlin_out <- data.frame(
+	district_number_2025 = berlin_then_2025[["Nr "]][berlin_matched],
+	district_name = berlin_then_2025[["Gebiet "]][berlin_matched],
+	district_number_2021 = berlin_now_2021[["Nr "]][berlin_match_idx[berlin_matched]],
+	stringsAsFactors = FALSE
+)
+
+for (col in berlin_compare_cols) {
+	then_vals <- as.numeric(berlin_then_2025[[col]][berlin_matched])
+	prev_vals <- as.numeric(berlin_now_2021[[col]][berlin_match_idx[berlin_matched]])
+	base <- gsub(" ", "_", col, fixed = TRUE)
+	berlin_out[[paste0(base, "_then")]] <- then_vals
+	berlin_out[[paste0(base, "_prev")]] <- prev_vals
+	berlin_out[[paste0(base, "_diff")]] <- then_vals - prev_vals
+}
+
+diff_col_names <- grep("_diff$", names(berlin_out), value = TRUE)
+berlin_out$n_changed_metrics <- rowSums(as.data.frame(lapply(berlin_out[diff_col_names], function(x) {
+	!is.na(x) & x != 0
+})))
+berlin_out$only_eligible_erst_changed <- berlin_out$n_changed_metrics == 1 &
+	berlin_out$Wahlberechtigte_Erststimmen_diff != 0
+
+berlin_out <- berlin_out[order(berlin_out$district_number_2025), ]
+berlin_out_csv <- "Data/berlin_metrics_2025_vs_2021.csv"
+write.csv(berlin_out, berlin_out_csv, row.names = FALSE, fileEncoding = "UTF-8")
+cat("Berlin diagnostics CSV written:", berlin_out_csv, "\n")
+
+invisible(list(summary = summary_out, details = detail_out, redistricted_districts = redistricted_districts))
+
