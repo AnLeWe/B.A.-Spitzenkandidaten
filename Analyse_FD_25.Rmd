@@ -655,29 +655,35 @@ if (save.outputs == 1) {
 
 ```{r}
 
-lm.out <- all.results.smd[[1]]
-lm.out <- all.results.pr[[1]]
-lm.out <- all.results.smd.spill[[1]]
-lm.out <- all.results.pr.spill[[1]]
+diag.models <- list(
+  list(model = all.results.smd[[1]],       data = all.results.smd[[3]],       label = "Erststimme (base)"),
+  list(model = all.results.pr[[1]],        data = all.results.pr[[3]],        label = "Zweitstimme (base)"),
+  list(model = all.results.smd.spill[[1]], data = all.results.smd.spill[[3]], label = "Erststimme (spillover)"),
+  list(model = all.results.pr.spill[[1]],  data = all.results.pr.spill[[3]],  label = "Zweitstimme (spillover)")
+)
 
-# Residuals vs Fitted
-plot(lm.out, which = 1)
+for (i in seq_along(diag.models)) {
+  lm.out  <- diag.models[[i]]$model
+  lm.dat  <- diag.models[[i]]$data
+  lbl     <- diag.models[[i]]$label
 
-# Scale-Location plot
-plot(lm.out, which = 3)
+  # Scale-Location: spread of residuals across fitted range (homoskedasticity)
+  plot(lm.out, which = 3, main = paste(lbl, "- Scale-Location"))
 
-# Studentized residuals
-plot(studres(lm.out) ~ fitted(lm.out),
-     xlab = "Fitted Values",
-     ylab = "Studentized Residuals",
-     main = "Residuals vs Fitted")
-abline(h = 0, lty = 2)
+  # Studentized residuals vs fitted: outlier detection
+  plot(studres(lm.out) ~ fitted(lm.out),
+       xlab = "Fitted Values",
+       ylab = "Studentized Residuals",
+       main = paste(lbl, "- Studentized Residuals vs Fitted"))
+  abline(h = 0, lty = 2)
 
-boxplot(studres(lm.out) ~ lm.dat$treat,
-     xlab = "Treatment",
-     ylab = "Studentized Residuals",
-     main = "Residuals vs Fitted")
-abline(h = 0, lty = 2)
+  # Residual variance by treatment group
+  boxplot(studres(lm.out) ~ lm.dat$treat,
+       xlab = "Treatment",
+       ylab = "Studentized Residuals",
+       main = paste(lbl, "- Residuals by Treatment"))
+  abline(h = 0, lty = 2)
+}
 
 ```
 
@@ -728,16 +734,17 @@ We regress u_t on u_t-1. If the effect is significant, there are serially correl
 Note: We first have to assign individual districts at t to those at t-1.
 
 ```{r}
-for (i.smdpr in 1:2){
-  if (i.smdpr == 1){
-    to.be.tested <- all.results.smd[[1]]  # Diagnostics for the model Erststimme
-    temp.dat <- all.results.smd[[3]]
-    temp.depv <- all.results.smd[[4]]
-  } else {
-    to.be.tested <- all.results.pr[[1]]  # Diagnostics for the model Zweitstimme
-    temp.dat <- all.results.pr[[3]]
-    temp.depv <- all.results.pr[[4]]
-  }
+result.sets <- list(
+  list(res = all.results.smd,       label = "Erststimme (base)"),
+  list(res = all.results.pr,        label = "Zweitstimme (base)"),
+  list(res = all.results.smd.spill, label = "Erststimme (spillover)"),
+  list(res = all.results.pr.spill,  label = "Zweitstimme (spillover)")
+)
+
+for (i.smdpr in 1:4){
+  to.be.tested <- result.sets[[i.smdpr]]$res[[1]]
+  temp.dat     <- result.sets[[i.smdpr]]$res[[3]]
+  temp.depv    <- result.sets[[i.smdpr]]$res[[4]]
   
   residuals <- residuals(to.be.tested)
   if (party.selec.switch != 0){
@@ -768,15 +775,14 @@ for (i.smdpr in 1:2){
     past.resid[, , i.btw] <- residuals[key, , i.btw + 1]
   }
   
-  print(c("Erststimme", "Zweitstimme")[i.smdpr])
+  print(result.sets[[i.smdpr]]$label)
   print(
     summary(lm.out <- lm(c(current.resid) ~ c(past.resid)))
   )
-  
+
   plot(c(current.resid) ~ c(past.resid),
        ylab = "t", xlab = "t-1",
-       main = paste(c("Erststimme", "Zweitstimme")[i.smdpr], 
-                    "- Serial Correlation Test"))
+       main = paste(result.sets[[i.smdpr]]$label, "- Serial Correlation Test"))
   abline(lm.out)
 }
 ```
