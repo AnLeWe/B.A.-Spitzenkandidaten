@@ -636,6 +636,11 @@ rbind.with.diff.col <- function(...) {
 data_now <- rbind.with.diff.col(result2525,result2121,result1717,result1313,result0909,result0505)
 data_then <- rbind.with.diff.col(result2521,result2117, result1713,result1309,result0905,result0502)
 
+# Some manual correction of the structure
+result0202 <- result0202[,c(1,2,20,3:19)]
+names(result0202) <- names(result0505)[c(1:5,8:22)]
+
+
 data_now_with_2002 <- 
   rbind.with.diff.col(result2525,result2121,result1717,result1313,result0909,result0505,result0202)
 
