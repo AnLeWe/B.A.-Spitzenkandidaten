@@ -668,7 +668,7 @@ for (i in seq_along(diag.models)) {
   lbl     <- diag.models[[i]]$label
 
   # Scale-Location: spread of residuals across fitted range (homoskedasticity)
-  plot(lm.out, which = 3, main = paste(lbl, "- Scale-Location"))
+  plot(lm.out, which = 3, main = paste(lbl))
 
   # Studentized residuals vs fitted: outlier detection
   plot(studres(lm.out) ~ fitted(lm.out),
