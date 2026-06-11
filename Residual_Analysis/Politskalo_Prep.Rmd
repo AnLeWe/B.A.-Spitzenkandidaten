@@ -1,5 +1,5 @@
 ---
-title: "Residual Analysis: Politician Approval and Treatment Effects"
+title: "Politbarometer Approval Ratings — Data Preparation"
 output:
   html_document:
     toc: true
@@ -7,44 +7,15 @@ output:
     code_folding: hide
 ---
 
+Reads the Politbarometer SAV files (2002–2021), extracts pre-election Skalometer ratings for
+Spitzenkandidaten, and saves the result as `Data/politskalo.RData`. Run this once before
+`Residual_Analysis.Rmd`. No 2025 wave is currently available.
+
 ```{r setup, message=FALSE, warning=FALSE}
 library(haven)
-library(readxl)
-
-build.politskalo <- 0  # 1 = build from SAV files and save; 0 = load saved politskalo.RData
 ```
 
-# Overview
-
-The FD model estimates a single pooled treatment effect across all politicians and years. This analysis asks whether the deviation from that average relates to how popular a politician was at the time of the election.
-
-The outcome is sign(treat) x u-hat: positive means the constituency moved more than the model average in the expected direction, negative means less. For PR candidates this is averaged across constituencies. The approval measure is the mean Skalometer rating (1 to 11) from the Politbarometer pre-election wave.
-
-Coverage is 2002 to 2021. There is no 2025 data. AfD politicians are not covered by the Politbarometer. Some Die Linke candidates in 2013 are also missing.
-
-On the correlation: Spearman's rho is used rather than Pearson. With N around 15 to 25 politician-year observations, we cannot assume bivariate normality, and Spearman makes no such assumption. It ranks both variables and correlates the ranks, so it is also robust to the outliers that are likely with this sample size.
-
-# 1. Data loading
-
-```{r load_data, message=FALSE}
-load("Data/analysis_dat.RData")
-
-result.files <- sort(list.files(
-  "BTW_2025/Outputs/First_Differencing/",
-  pattern   = "^party\\.selec1_denom1_\\d{4}-\\d{2}-\\d{2}\\.RData$",
-  full.names = TRUE
-))
-if (length(result.files) == 0) stop("No result files found. Run Analyse_FD_25.Rmd first.")
-cat("Loading:", basename(result.files[length(result.files)]), "\n")
-load(result.files[length(result.files)])
-
-treat.raw <- read_xlsx("Data/Treatment_WK.xlsx", sheet = 2)
-names(treat.raw)[names(treat.raw) == "Jahr"]     <- "year"
-names(treat.raw)[names(treat.raw) == "Personen"] <- "candidates"
-treat.raw  <- treat.raw[!is.na(treat.raw$year), ]
-treat.raw  <- treat.raw[!is.na(treat.raw$Partei2), ]
-treat.raw$WK <- suppressWarnings(as.numeric(treat.raw$WK))
-```
+# Variable notes
 
 ### 2021
 V106: Baerbock (GR), KK
@@ -126,22 +97,21 @@ Missing: none
 extra: here Künast (GR), v97 Merkel
 
 
-# 2. Politbarometer approval ratings
+# Config and helpers
 
-The Skalometer runs from 1 (very negative) to 11 (very positive). We use the September wave in each year, which is closest to the election. No monthly pooling is done: the mean is computed from the election month only. Where a politician does not appear in September (the questionnaire rotates which politicians are asked about), we fall back to the single latest available pre-election month.
+The Skalometer runs from 1 (very negative) to 11 (very positive). We use the September wave in
+each year, which is closest to the election. Where a politician does not appear in September
+(the questionnaire rotates), we fall back to the single latest available pre-election month.
 
-For years where the Politbarometer was fielded as separate east and west samples (2002, 2005, 2009), we combine both files before computing the mean so that the national average is weighted by actual sample size rather than giving equal weight to each half.
-
-For treat_fd equal to -1 (a politician who left), we use the approval rating from the previous election year, since that is the popularity the party lost.
+For years where the Politbarometer was fielded as separate east and west samples (2002, 2005,
+2009), we combine both files so that the national mean is weighted by actual sample size rather
+than giving equal weight to each half.
 
 ```{r pb_config}
-prev.year.map <- c(`2021`=2017, `2017`=2013, `2013`=2009,
-                   `2009`=2005, `2005`=2002, `2002`=NA_real_)
-
 pb.config <- list(
   `2021` = list(
     type = "combined",
-    file = "Data/politbarometer/ZA7856_v1-1-0_2021.sav",
+    file = "../Data/politbarometer/ZA7856_v1-1-0_2021.sav",
     month.var = "V4", bundesland.var = "V6", election.month = 9,
     vars = c(
       "Baerbock, Annalena" = "V106",
@@ -171,7 +141,7 @@ pb.config <- list(
   ),
   `2017` = list(
     type = "combined",
-    file = "Data/politbarometer/ZA6988_v1-2-0_2017.sav",
+    file = "../Data/politbarometer/ZA6988_v1-2-0_2017.sav",
     month.var = "V4", bundesland.var = "V7", election.month = 9,
     vars = c(
       "Lindner, Christian"  = "V104",
@@ -202,7 +172,7 @@ pb.config <- list(
   ),
   `2013` = list(
     type = "combined",
-    file = "Data/politbarometer/ZA5677_v1-1-0_2013.sav",
+    file = "../Data/politbarometer/ZA5677_v1-1-0_2013.sav",
     month.var = "V4", bundesland.var = "V6", election.month = 9,
     vars = c(
       "Brüderle, Rainer" = "V114",
@@ -231,8 +201,8 @@ pb.config <- list(
   ),
   `2009` = list(
     type = "split",
-    file.west = "Data/politbarometer/ZA5432_v1-2-0_2009_west.sav",
-    file.east = "Data/politbarometer/ZA5431_v1-2-0_2009_east.sav",
+    file.west = "../Data/politbarometer/ZA5432_v1-2-0_2009_west.sav",
+    file.east = "../Data/politbarometer/ZA5431_v1-2-0_2009_east.sav",
     month.var = "V4", bundesland.var = "V6", election.month = 9,
     vars = c(
       "Gysi, Gregor"       = "V105",
@@ -262,8 +232,8 @@ pb.config <- list(
   ),
   `2005` = list(
     type = "split",
-    file.west = "Data/politbarometer/ZA4259_v1-1-0_2005_west.sav",
-    file.east = "Data/politbarometer/ZA4258_v1-1-0_2005_east.sav",
+    file.west = "../Data/politbarometer/ZA4259_v1-1-0_2005_west.sav",
+    file.east = "../Data/politbarometer/ZA4258_v1-1-0_2005_east.sav",
     month.var = "v3", bundesland.var = "v5", election.month = 9,
     vars = c(
       "Fischer, Joschka"   = "v143",
@@ -295,8 +265,8 @@ pb.config <- list(
   ),
   `2002` = list(
     type = "split",
-    file.west = "Data/politbarometer/ZA3849_2002_west.sav",
-    file.east = "Data/politbarometer/ZA3850_2002_east.sav",
+    file.west = "../Data/politbarometer/ZA3849_2002_west.sav",
+    file.east = "../Data/politbarometer/ZA3850_2002_east.sav",
     month.var = "v3", bundesland.var = "v5", election.month = 9,
     vars = c(
       "Fischer, Joschka"   = "v94",
@@ -373,7 +343,7 @@ extract.raw.ratings <- function(dat, vars, month.var, election.month, bundesland
     rating[!is.na(rating) & (rating < 1 | rating > 11)] <- NA
     if (!any(keep)) return(NULL)
     df <- data.frame(
-      candidates         = nm,
+      candidates       = nm,
       rating           = rating,
       bundesland       = bl.raw[keep],
       bundesland.label = bl.label.map[as.character(bl.raw[keep])],
@@ -420,181 +390,29 @@ build.approval.long <- function(cfg) {
     df[all_cols]
   }))
 }
-
-if (build.politskalo == 1) {
-  approval.long <- build.approval.long(pb.config)
-  # Mobile sampling introduced in 2017. Before that: landline only (code 2 = Festnetzstichprobe).
-  approval.long$landline.mobile[is.na(approval.long$landline.mobile)] <- 2L
-  politskalo <- approval.long
-  save(politskalo, file = "Data/politskalo.RData")
-  cat("Saved politskalo to Data/politskalo.RData\n")
-} else {
-  load("Data/politskalo.RData")
-  approval.long <- politskalo
-}
-
-# National means — keeps downstream code (sections 4-5) unchanged
-approval.tab <- aggregate(rating ~ candidates + year, data = approval.long, FUN = mean)
-names(approval.tab)[3] <- "approval"
 ```
 
+# Build and save
 
+```{r build_save}
+politskalo <- build.approval.long(pb.config)
+# Mobile sampling introduced in 2017. Before that: landline only (code 2 = Festnetzstichprobe).
+politskalo$landline.mobile[is.na(politskalo$landline.mobile)] <- 2L
 
+# Harmonise religion to the 6-category 2005+ scheme.
+# 2002 has only 5 categories (no Jude/Jüdin): 4=andere, 5=keiner.
+# 2005+ scheme:                                4=Jude/Jüdin, 5=andere, 6=keiner.
+# Shift 2002 codes 4→5 and 5→6 simultaneously (ifelse evaluates in one pass).
+r2002 <- !is.na(politskalo$religion) & politskalo$year == 2002
+politskalo$religion <- ifelse(r2002 & politskalo$religion == 4L, 5L,
+                       ifelse(r2002 & politskalo$religion == 5L, 6L,
+                              politskalo$religion))
+# After recoding: code 4 (jüdisch) has no 2002 observations — correct,
+# since 2002 absorbed that group into "andere" with no separate category.
 
-# 3. Directed residuals
-
-```{r directed_residuals}
-party.sub <- c(SPD="SPD", CDU="CDU", GRU="Grünen",
-               FDP="FDP", AFD="AfD", LIN="Linke", BSW="BSW")
-
-lookup.politician <- function(wkr.nr, party.code, year.t, treat.fd) {
-  yr <- if (treat.fd == 1) year.t else prev.year.map[as.character(year.t)]
-  if (is.na(yr)) return(NA_character_)
-  cands <- treat.raw[
-    treat.raw$year == yr &
-    grepl(party.sub[party.code], treat.raw$Partei2, ignore.case = TRUE) &
-    (as.numeric(treat.raw$T_DM) != 0 | as.numeric(treat.raw$T_LP) != 0), ]
-  hit <- cands[!is.na(cands$WK) & cands$WK == wkr.nr, ]
-  if (nrow(hit)   > 0) return(hit$candidates[1])
-  if (nrow(cands) > 0) return(cands$candidates[1])
-  NA_character_
-}
-
-model.sets <- list(
-  list(res = all.results.smd, tier = "FPTP"),
-  list(res = all.results.pr,  tier = "PR")
-)
-
-rows.direct <- list()
-for (ms in model.sets) {
-  lm.dat          <- ms$res[[3]]
-  lm.dat$resid    <- residuals(ms$res[[1]])
-  lm.dat$year.num <- as.numeric(as.character(lm.dat$year))
-  lm.dat$party.ch <- as.character(lm.dat$party)
-  lm.dat$tier     <- ms$tier
-
-  dir.obs <- lm.dat[lm.dat$treat != 0, ]
-  if (nrow(dir.obs) == 0) next
-
-  dir.obs$directed.effect <- sign(dir.obs$treat) * dir.obs$resid
-  dir.obs$candidates <- mapply(lookup.politician,
-    wkr.nr     = dir.obs$wkr.nr,
-    party.code = dir.obs$party.ch,
-    year.t     = dir.obs$year.num,
-    treat.fd   = dir.obs$treat)
-  dir.obs$approval.year <- ifelse(
-    dir.obs$treat == 1, dir.obs$year.num,
-    prev.year.map[as.character(dir.obs$year.num)])
-  rows.direct[[length(rows.direct)+1]] <- dir.obs
-}
-dat.direct <- do.call(rbind, rows.direct)
+save(politskalo, file = "../Data/politskalo.RData")
+cat("Saved politskalo to Data/politskalo.RData\n")
+cat("Rows:", nrow(politskalo), "\n")
+cat("Years covered:", paste(sort(unique(politskalo$year)), collapse = ", "), "\n")
+cat("Candidates:", paste(sort(unique(politskalo$candidates)), collapse = ", "), "\n")
 ```
-
-i re
-
-# 4. Merge and aggregate
-
-```{r merge_aggregate}
-m <- merge(dat.direct, approval.tab,
-           by.x = c("candidates", "approval.year"),
-           by.y = c("candidates", "year"),
-           all.x = TRUE)
-
-make.agg <- function(dat) {
-  a    <- aggregate(directed.effect ~ candidates + approval.year + tier, data = dat, FUN = mean)
-  appr <- aggregate(approval ~ candidates + approval.year + tier, data = dat,
-                    FUN = function(x) mean(x, na.rm = TRUE), na.action = na.pass)
-  n    <- aggregate(directed.effect ~ candidates + approval.year + tier, data = dat, FUN = length)
-  names(n)[4] <- "n.wkr"
-  a <- merge(a, appr, by = c("candidates", "approval.year", "tier"), all.x = TRUE)
-  a <- merge(a,    n, by = c("candidates", "approval.year", "tier"))
-  a$short.label <- paste0(sub(",.*", "", a$candidates), " '",
-                           substr(a$approval.year, 3, 4))
-  a
-}
-
-agg.direct <- make.agg(m[!is.na(m$approval) & !is.na(m$candidates), ])
-agg.all    <- make.agg(m[!is.na(m$candidates), ])
-```
-
-# 5. Results
-
-## 5.1 Directed residuals per politician
-
-```{r residual_table}
-for (t in c("FPTP", "PR")) {
-  sub <- agg.all[agg.all$tier == t, ]
-  sub <- sub[order(sub$directed.effect, decreasing = TRUE), ]
-  cat("\n", t, "\n")
-  print(data.frame(
-    politician      = sub$short.label,
-    directed.effect = round(sub$directed.effect, 4),
-    approval        = round(sub$approval, 2),
-    n.wkr           = sub$n.wkr
-  ), row.names = FALSE)
-}
-```
-
-```{r residual_dotplot, fig.width=11, fig.height=5}
-par(mfrow = c(1, 2), mar = c(9, 4, 3, 1))
-
-for (t in c("FPTP", "PR")) {
-  sub      <- agg.all[agg.all$tier == t, ]
-  sub      <- sub[order(sub$directed.effect), ]
-  has.appr <- !is.na(sub$approval)
-  pt.col   <- ifelse(!has.appr, "grey60",
-                     ifelse(sub$directed.effect >= 0, "steelblue", "tomato3"))
-  pt.pch   <- ifelse(has.appr, 16, 1)
-
-  plot(seq_along(sub$directed.effect), sub$directed.effect,
-       type = "n", xaxt = "n", xlab = "",
-       ylab = "sign(treat) x u-hat",
-       main = t,
-       xlim = c(0.5, nrow(sub) + 0.5))
-  segments(seq_along(sub$directed.effect), 0, seq_along(sub$directed.effect),
-           sub$directed.effect, col = pt.col, lwd = 1.2)
-  points(seq_along(sub$directed.effect), sub$directed.effect,
-         pch = pt.pch, col = pt.col, cex = 1.1)
-  abline(h = 0, lty = 2, col = "grey40")
-  axis(1, at = seq_along(sub$directed.effect), labels = sub$short.label,
-       las = 2, cex.axis = 0.65)
-}
-
-par(mfrow = c(1, 1))
-legend("bottomright", inset = 0.01,
-       legend = c("positive (with approval)", "negative (with approval)", "no approval data"),
-       pch = c(16, 16, 1), col = c("steelblue", "tomato3", "grey60"),
-       cex = 0.75, bty = "n")
-```
-
-## 5.2 Approval and directed residual
-
-```{r scatter, fig.width=10, fig.height=5}
-par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
-
-for (t in c("FPTP", "PR")) {
-  sub <- agg.direct[agg.direct$tier == t, ]
-
-  plot(sub$approval, sub$directed.effect,
-       pch = 16, cex = 0.9, col = "grey30",
-       xlab = "Skalometer (1 to 11)",
-       ylab = "sign(treat) x u-hat",
-       main = t,
-       xlim = c(2, 11))
-  abline(h = 0, lty = 2, col = "grey60")
-  text(sub$approval, sub$directed.effect,
-       labels = sub$short.label, cex = 0.6, pos = 3, col = "grey40")
-
-  if (nrow(sub) >= 3) {
-    rho <- cor(sub$approval, sub$directed.effect,
-               method = "spearman", use = "complete.obs")
-    legend("topleft", bty = "n", cex = 0.85,
-           legend = paste0("Spearman rho = ", round(rho, 2),
-                           "  (N = ", nrow(sub), ")"))
-  }
-}
-
-par(mfrow = c(1, 1))
-```
-
-N at the politician-year level is small (around 15 to 25 for FPTP, more for PR). The results should be read as exploratory. AfD politicians are not in the Politbarometer. The 2025 election is not covered.
